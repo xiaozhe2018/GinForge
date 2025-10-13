@@ -1,0 +1,187 @@
+# GinForge 框架配置文件
+# 支持环境变量覆盖，格式：CONFIG_KEY=value
+
+# 应用基础配置
+app:
+  name: "GinForge Framework"
+  version: "0.1.0"
+  env: "development"  # development, production, test
+  debug: true
+  port: 8080
+  read_timeout: "10s"
+  write_timeout: "10s"
+  idle_timeout: "60s"
+
+# 服务端口配置
+services:
+  user_api:
+    port: 8081
+  merchant_api:
+    port: 8082
+  admin_api:
+    port: 8083
+  gateway:
+    port: 8080
+  gateway_worker:
+    port: 8084
+  demo:
+    port: 8085
+
+# 日志配置
+log:
+  level: "debug"  # debug, info, warn, error
+  format: "json"  # json, text
+  output: "stdout"  # stdout, stderr, file
+  file_path: "logs/app.log"
+  max_size: 100  # MB
+  max_age: 30    # days
+  max_backups: 10
+  compress: true
+
+# 数据库配置
+database:
+  driver: "mysql"  # sqlite, mysql, postgres
+  host: "localhost"
+  port: 3306
+  database: "gin_forge"
+  username: "root"
+  password: "123456"
+  charset: "utf8mb4"
+  timezone: "Asia/Shanghai"
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: "1h"
+  log_level: "warn"  # silent, error, warn, info
+
+# Redis配置
+redis:
+  enabled: true
+  host: "localhost"
+  port: 6379
+  password: ""
+  database: 0
+  pool_size: 10
+  min_idle_conns: 5
+  max_retries: 3
+  dial_timeout: "5s"
+  read_timeout: "3s"
+  write_timeout: "3s"
+  idle_timeout: "5m"
+  idle_check_frequency: "1m"
+
+# 缓存配置
+cache:
+  default_ttl: "5m"
+  max_size: 1000
+  cleanup_interval: "10m"
+
+# JWT配置
+jwt:
+  secret: "your-secret-key-change-in-production"
+  expire: "24h"
+  issuer: "GinForge"
+  audience: "GinForge-Users"
+
+# 限流配置
+rate_limit:
+  enabled: true
+  rps: 100
+  burst: 200
+  window: "1m"
+
+# CORS配置
+cors:
+  enabled: true
+  origins: ["*"]
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  headers: ["Content-Type", "Authorization", "X-Requested-With"]
+  credentials: true
+  max_age: "12h"
+
+# 监控配置
+monitor:
+  enabled: true
+  metrics_path: "/metrics"
+  health_path: "/healthz"
+  ready_path: "/readyz"
+
+# 服务发现配置
+service_discovery:
+  type: "none"  # none, consul, etcd
+  consul:
+    address: "127.0.0.1:8500"
+    datacenter: "dc1"
+    service_name: "ginforge"
+    service_id: "ginforge-1"
+    service_tags: ["api", "v1"]
+  etcd:
+    endpoints: ["127.0.0.1:2379"]
+    timeout: "5s"
+    ttl: "30s"
+
+# 微服务配置
+microservices:
+  user_api:
+    name: "user-api"
+    port: 8081
+    health_path: "/healthz"
+    metrics_path: "/metrics"
+  merchant_api:
+    name: "merchant-api"
+    port: 8082
+    health_path: "/healthz"
+    metrics_path: "/metrics"
+  admin_api:
+    name: "admin-api"
+    port: 8083
+    health_path: "/healthz"
+    metrics_path: "/metrics"
+  gateway:
+    name: "gateway"
+    port: 8080
+    health_path: "/healthz"
+    metrics_path: "/metrics"
+
+# 外部服务配置
+external_services:
+  user_api_url: "http://localhost:8081"
+  merchant_api_url: "http://localhost:8082"
+  admin_api_url: "http://localhost:8083"
+
+# 文件上传配置
+upload:
+  max_size: 10  # MB
+  allowed_types: ["image/jpeg", "image/png", "image/gif", "application/pdf"]
+  upload_path: "uploads"
+  temp_path: "temp"
+
+# 邮件配置
+email:
+  enabled: false
+  smtp_host: "smtp.gmail.com"
+  smtp_port: 587
+  smtp_username: ""
+  smtp_password: ""
+  from_name: "GinForge"
+  from_email: "noreply@ginforge.com"
+
+# 短信配置
+sms:
+  enabled: false
+  provider: "aliyun"  # aliyun, tencent, qiniu
+  access_key: ""
+  secret_key: ""
+  sign_name: "GinForge"
+  template_code: "SMS_123456789"
+
+# 安全配置
+security:
+  bcrypt_cost: 12
+  session_timeout: "24h"
+  max_login_attempts: 5
+  lockout_duration: "15m"
+  password_min_length: 8
+  password_require_uppercase: true
+  password_require_lowercase: true
+  password_require_numbers: true
+  password_require_symbols: false

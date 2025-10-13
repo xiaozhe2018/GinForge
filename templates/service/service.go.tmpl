@@ -1,0 +1,32 @@
+package service
+
+// {{.ServiceName}}Service 服务
+type {{.ServiceName}}Service struct{}
+
+func New{{.ServiceName}}Service() *{{.ServiceName}}Service {
+	return &{{.ServiceName}}Service{}
+}
+
+// GetData 获取数据
+func (s *{{.ServiceName}}Service) GetData() (interface{}, error) {
+	// 实现业务逻辑
+	return map[string]string{
+		"message": "Hello from {{.ServiceName}} service",
+		"status":  "success",
+	}, nil
+}
+
+// CreateData 创建数据
+func (s *{{.ServiceName}}Service) CreateData(req *CreateDataRequest) (interface{}, error) {
+	// 实现业务逻辑
+	return map[string]string{
+		"id":      "123",
+		"message": "Data created successfully",
+	}, nil
+}
+
+// CreateDataRequest 创建数据请求
+type CreateDataRequest struct {
+	Name string `json:"name" binding:"required"`
+	Desc string `json:"desc"`
+}

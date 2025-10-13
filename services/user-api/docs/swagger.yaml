@@ -1,0 +1,1983 @@
+basePath: /api/v1
+definitions:
+  model.AdminMenu:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/model.AdminMenu'
+        type: array
+      code:
+        type: string
+      component:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      parent:
+        allOf:
+        - $ref: '#/definitions/model.AdminMenu'
+        description: 关联
+      parent_id:
+        type: integer
+      path:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/model.AdminRole'
+        type: array
+      sort:
+        type: integer
+      status:
+        type: integer
+      type:
+        type: string
+      updated_at:
+        type: string
+      visible:
+        type: integer
+    type: object
+  model.AdminMenuCreateRequest:
+    properties:
+      code:
+        maxLength: 20
+        minLength: 2
+        type: string
+      component:
+        type: string
+      description:
+        type: string
+      icon:
+        type: string
+      name:
+        maxLength: 20
+        minLength: 2
+        type: string
+      parent_id:
+        minimum: 0
+        type: integer
+      path:
+        type: string
+      sort:
+        minimum: 0
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+      type:
+        enum:
+        - directory
+        - menu
+        - button
+        type: string
+      visible:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - code
+    - name
+    - type
+    type: object
+  model.AdminMenuListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.AdminMenu'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.AdminMenuTreeResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.AdminMenu'
+        type: array
+    type: object
+  model.AdminMenuUpdateRequest:
+    properties:
+      code:
+        maxLength: 20
+        minLength: 2
+        type: string
+      component:
+        type: string
+      description:
+        type: string
+      icon:
+        type: string
+      name:
+        maxLength: 20
+        minLength: 2
+        type: string
+      parent_id:
+        minimum: 0
+        type: integer
+      path:
+        type: string
+      sort:
+        minimum: 0
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+      type:
+        enum:
+        - directory
+        - menu
+        - button
+        type: string
+      visible:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - code
+    - name
+    - type
+    type: object
+  model.AdminPermission:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      roles:
+        description: 关联
+        items:
+          $ref: '#/definitions/model.AdminRole'
+        type: array
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.AdminPermissionCreateRequest:
+    properties:
+      code:
+        maxLength: 50
+        minLength: 2
+        type: string
+      description:
+        type: string
+      name:
+        maxLength: 20
+        minLength: 2
+        type: string
+      type:
+        enum:
+        - menu
+        - button
+        - api
+        type: string
+    required:
+    - code
+    - name
+    - type
+    type: object
+  model.AdminPermissionListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.AdminPermission'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.AdminPermissionUpdateRequest:
+    properties:
+      code:
+        maxLength: 50
+        minLength: 2
+        type: string
+      description:
+        type: string
+      name:
+        maxLength: 20
+        minLength: 2
+        type: string
+      type:
+        enum:
+        - menu
+        - button
+        - api
+        type: string
+    required:
+    - code
+    - name
+    - type
+    type: object
+  model.AdminRole:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      menus:
+        items:
+          $ref: '#/definitions/model.AdminMenu'
+        type: array
+      name:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/model.AdminPermission'
+        type: array
+      sort:
+        type: integer
+      status:
+        type: integer
+      updated_at:
+        type: string
+      users:
+        description: 关联 - 手动加载，不使用GORM自动关联
+        items:
+          $ref: '#/definitions/model.AdminUser'
+        type: array
+    type: object
+  model.AdminRoleCreateRequest:
+    properties:
+      code:
+        maxLength: 20
+        minLength: 2
+        type: string
+      description:
+        type: string
+      menu_ids:
+        items:
+          type: integer
+        type: array
+      name:
+        maxLength: 20
+        minLength: 2
+        type: string
+      permission_ids:
+        items:
+          type: integer
+        type: array
+      sort:
+        minimum: 0
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - code
+    - name
+    type: object
+  model.AdminRoleListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.AdminRole'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.AdminRoleUpdateRequest:
+    properties:
+      code:
+        maxLength: 20
+        minLength: 2
+        type: string
+      description:
+        type: string
+      menu_ids:
+        items:
+          type: integer
+        type: array
+      name:
+        maxLength: 20
+        minLength: 2
+        type: string
+      permission_ids:
+        items:
+          type: integer
+        type: array
+      sort:
+        minimum: 0
+        type: integer
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - code
+    - name
+    type: object
+  model.AdminUser:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      last_login_at:
+        type: string
+      last_login_ip:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      roles:
+        description: 关联 - 手动加载，不使用GORM自动关联
+        items:
+          $ref: '#/definitions/model.AdminRole'
+        type: array
+      status:
+        type: integer
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  model.AdminUserCreateRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        maxLength: 20
+        minLength: 6
+        type: string
+      phone:
+        type: string
+      role_ids:
+        items:
+          type: integer
+        type: array
+      username:
+        maxLength: 20
+        minLength: 3
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - role_ids
+    - username
+    type: object
+  model.AdminUserListResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/model.AdminUser'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.AdminUserLoginRequest:
+    properties:
+      captcha:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  model.AdminUserLoginResponse:
+    properties:
+      menus:
+        items:
+          $ref: '#/definitions/model.AdminMenu'
+        type: array
+      permissions:
+        items:
+          type: string
+        type: array
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/model.AdminUser'
+    type: object
+  model.AdminUserUpdateRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      role_ids:
+        items:
+          type: integer
+        type: array
+      status:
+        enum:
+        - 0
+        - 1
+        type: integer
+    required:
+    - email
+    - name
+    - role_ids
+    type: object
+  model.ChangePasswordRequest:
+    properties:
+      new_password:
+        maxLength: 20
+        minLength: 6
+        type: string
+      old_password:
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  model.Merchant:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      logo:
+        type: string
+      shop_name:
+        type: string
+      status:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  model.Order:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      merchant_id:
+        type: string
+      status:
+        type: integer
+      total:
+        type: number
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  model.Product:
+    properties:
+      category_id:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      images:
+        type: string
+      merchant_id:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      status:
+        type: integer
+      stock:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  model.User:
+    properties:
+      avatar:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      nickname:
+        type: string
+      phone:
+        type: string
+      status:
+        type: integer
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  response.Response:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+      trace_id:
+        type: string
+    type: object
+  service.CreateProductRequest:
+    properties:
+      description:
+        example: 商品描述
+        type: string
+      images:
+        example: https://example.com/product.jpg
+        type: string
+      name:
+        example: 商品名称
+        type: string
+      price:
+        example: 99.99
+        minimum: 0
+        type: number
+      stock:
+        example: 100
+        minimum: 0
+        type: integer
+    required:
+    - name
+    - price
+    type: object
+  service.UpdateMerchantRequest:
+    properties:
+      description:
+        example: 商店描述
+        type: string
+      logo:
+        example: https://example.com/new-logo.jpg
+        type: string
+      shop_name:
+        example: 新商店名称
+        type: string
+    type: object
+  service.UpdateProfileRequest:
+    properties:
+      avatar:
+        example: https://example.com/new-avatar.jpg
+        type: string
+      nickname:
+        example: 新昵称
+        type: string
+      phone:
+        example: "13800138001"
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: 用户端相关接口文档
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: 用户端 API
+  version: "1.0"
+paths:
+  /admin/auth/change-password:
+    put:
+      consumes:
+      - application/json
+      description: 修改当前用户的登录密码
+      parameters:
+      - description: 修改密码请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 修改密码
+      tags:
+      - 认证管理
+  /admin/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 管理员用户登录接口
+      parameters:
+      - description: 登录请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminUserLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminUserLoginResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 用户名或密码错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 管理员登录
+      tags:
+      - 认证管理
+  /admin/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: 管理员用户登出接口
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登出成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: 管理员登出
+      tags:
+      - 认证管理
+  /admin/auth/profile:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的基本信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminUser'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证管理
+    put:
+      consumes:
+      - application/json
+      description: 更新当前登录用户的基本信息
+      parameters:
+      - description: 更新请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminUserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新当前用户信息
+      tags:
+      - 认证管理
+  /admin/menus:
+    get:
+      consumes:
+      - application/json
+      description: 获取管理员菜单列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 菜单类型
+        in: query
+        name: type
+        type: string
+      - description: 菜单状态
+        in: query
+        name: status
+        type: integer
+      - description: 父菜单ID
+        in: query
+        name: parent_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminMenuListResponse'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取菜单列表
+      tags:
+      - 菜单管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的管理员菜单
+      parameters:
+      - description: 创建菜单请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminMenuCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建菜单
+      tags:
+      - 菜单管理
+  /admin/menus/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的管理员菜单
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除菜单
+      tags:
+      - 菜单管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定管理员菜单的详细信息
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminMenu'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 菜单不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取菜单详情
+      tags:
+      - 菜单管理
+    put:
+      consumes:
+      - application/json
+      description: 更新管理员菜单信息
+      parameters:
+      - description: 菜单ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新菜单请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminMenuUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新菜单
+      tags:
+      - 菜单管理
+  /admin/menus/tree:
+    get:
+      consumes:
+      - application/json
+      description: 获取管理员菜单树形结构
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminMenuTreeResponse'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取菜单树
+      tags:
+      - 菜单管理
+  /admin/permissions:
+    get:
+      consumes:
+      - application/json
+      description: 获取管理员权限列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 权限类型
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminPermissionListResponse'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取权限列表
+      tags:
+      - 权限管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的管理员权限
+      parameters:
+      - description: 创建权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminPermissionCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建权限
+      tags:
+      - 权限管理
+  /admin/permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的管理员权限
+      parameters:
+      - description: 权限ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除权限
+      tags:
+      - 权限管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定管理员权限的详细信息
+      parameters:
+      - description: 权限ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminPermission'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 权限不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取权限详情
+      tags:
+      - 权限管理
+    put:
+      consumes:
+      - application/json
+      description: 更新管理员权限信息
+      parameters:
+      - description: 权限ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新权限请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminPermissionUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新权限
+      tags:
+      - 权限管理
+  /admin/roles:
+    get:
+      consumes:
+      - application/json
+      description: 获取管理员角色列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 角色状态
+        in: query
+        name: status
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminRoleListResponse'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取角色列表
+      tags:
+      - 角色管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的管理员角色
+      parameters:
+      - description: 创建角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminRoleCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建角色
+      tags:
+      - 角色管理
+  /admin/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的管理员角色
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除角色
+      tags:
+      - 角色管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定管理员角色的详细信息
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminRole'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 角色不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取角色详情
+      tags:
+      - 角色管理
+    put:
+      consumes:
+      - application/json
+      description: 更新管理员角色信息
+      parameters:
+      - description: 角色ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新角色请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminRoleUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新角色
+      tags:
+      - 角色管理
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: 获取管理员用户列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      - description: 用户状态
+        in: query
+        name: status
+        type: integer
+      - description: 角色ID
+        in: query
+        name: role_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminUserListResponse'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户列表
+      tags:
+      - 用户管理
+    post:
+      consumes:
+      - application/json
+      description: 创建新的管理员用户
+      parameters:
+      - description: 创建用户请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminUserCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建用户
+      tags:
+      - 用户管理
+  /admin/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定的管理员用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 删除用户
+      tags:
+      - 用户管理
+    get:
+      consumes:
+      - application/json
+      description: 获取指定管理员用户的详细信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.AdminUser'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户详情
+      tags:
+      - 用户管理
+    put:
+      consumes:
+      - application/json
+      description: 更新管理员用户信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新用户请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminUserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户
+      tags:
+      - 用户管理
+  /admin/users/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: 更新管理员用户的状态
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 用户状态
+        enum:
+        - 0
+        - 1
+        in: query
+        name: status
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户状态
+      tags:
+      - 用户管理
+  /merchant/info:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录商户的详细信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Merchant'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取商户信息
+      tags:
+      - merchant
+    put:
+      consumes:
+      - application/json
+      description: 更新当前登录商户的信息
+      parameters:
+      - description: 更新商户信息请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateMerchantRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新商户信息
+      tags:
+      - merchant
+  /order/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前商户的订单列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  properties:
+                    list:
+                      items:
+                        $ref: '#/definitions/model.Order'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取订单列表
+      tags:
+      - order
+  /product/create:
+    post:
+      consumes:
+      - application/json
+      description: 创建新商品
+      parameters:
+      - description: 创建商品请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 创建商品
+      tags:
+      - product
+  /product/list:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前商户的商品列表
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  properties:
+                    list:
+                      items:
+                        $ref: '#/definitions/model.Product'
+                      type: array
+                    total:
+                      type: integer
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取商品列表
+      tags:
+      - product
+  /user/orders:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的订单列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  properties:
+                    list:
+                      items:
+                        $ref: '#/definitions/model.Order'
+                      type: array
+                    page:
+                      type: string
+                    size:
+                      type: string
+                    total:
+                      type: integer
+                  type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户订单
+      tags:
+      - user
+  /user/profile:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的详细资料
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户资料
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: 更新当前登录用户的资料信息
+      parameters:
+      - description: 更新资料请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 更新用户资料
+      tags:
+      - user
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

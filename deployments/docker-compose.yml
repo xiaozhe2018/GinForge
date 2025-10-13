@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # 用户端API服务
+  user-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["./user-api"]
+    ports:
+      - "8081:8080"
+    environment:
+      - SERVICE_NAME=user-api
+      - PORT=8080
+      - DB_DRIVER=sqlite
+      - DB_DSN=file:data/user.db
+      - JWT_SECRET=your-secret-key
+    volumes:
+      - user_data:/app/data
+    networks:
+      - goweb-network
+
+  # 商户端API服务
+  merchant-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["./merchant-api"]
+    ports:
+      - "8082:8080"
+    environment:
+      - SERVICE_NAME=merchant-api
+      - PORT=8080
+      - DB_DRIVER=sqlite
+      - DB_DSN=file:data/merchant.db
+      - JWT_SECRET=your-secret-key
+    volumes:
+      - merchant_data:/app/data
+    networks:
+      - goweb-network
+
+  # 管理后台API服务
+  admin-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["./admin-api"]
+    ports:
+      - "8083:8080"
+    environment:
+      - SERVICE_NAME=admin-api
+      - PORT=8080
+      - DB_DRIVER=sqlite
+      - DB_DSN=file:data/admin.db
+      - JWT_SECRET=your-secret-key
+    volumes:
+      - admin_data:/app/data
+    networks:
+      - goweb-network
+
+  # API网关
+  gateway:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["./gateway"]
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVICE_NAME=gateway
+      - PORT=8080
+      - USER_API_ADDR=http://user-api:8080
+      - MERCHANT_API_ADDR=http://merchant-api:8080
+      - ADMIN_API_ADDR=http://admin-api:8080
+    depends_on:
+      - user-api
+      - merchant-api
+      - admin-api
+    networks:
+      - goweb-network
+
+  # 前端静态文件服务
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ../web:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - gateway
+    networks:
+      - goweb-network
+
+volumes:
+  user_data:
+  merchant_data:
+  admin_data:
+
+networks:
+  goweb-network:
+    driver: bridge

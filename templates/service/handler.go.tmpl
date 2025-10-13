@@ -1,0 +1,56 @@
+package handler
+
+import (
+	"github.com/gin-gonic/gin"
+
+	"goweb/pkg/logger"
+	"goweb/pkg/response"
+	"goweb/services/{{.ServiceName}}/internal/service"
+)
+
+// {{.ServiceName}}Handler 处理器
+type {{.ServiceName}}Handler struct {
+	{{.ServiceName}}Service *service.{{.ServiceName}}Service
+	logger                  logger.Logger
+}
+
+func New{{.ServiceName}}Handler({{.ServiceName}}Service *service.{{.ServiceName}}Service) *{{.ServiceName}}Handler {
+	return &{{.ServiceName}}Handler{
+		{{.ServiceName}}Service: {{.ServiceName}}Service,
+	}
+}
+
+// SetLogger 设置日志器
+func (h *{{.ServiceName}}Handler) SetLogger(logger logger.Logger) {
+	h.logger = logger
+}
+
+// GetData 获取数据示例
+func (h *{{.ServiceName}}Handler) GetData(c *gin.Context) {
+	data, err := h.{{.ServiceName}}Service.GetData()
+	if err != nil {
+		h.logger.Error("get data error", err)
+		response.InternalError(c, "获取数据失败")
+		return
+	}
+
+	response.Success(c, data)
+}
+
+// CreateData 创建数据示例
+func (h *{{.ServiceName}}Handler) CreateData(c *gin.Context) {
+	var req service.CreateDataRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "参数错误")
+		return
+	}
+
+	data, err := h.{{.ServiceName}}Service.CreateData(&req)
+	if err != nil {
+		h.logger.Error("create data error", err)
+		response.InternalError(c, "创建数据失败")
+		return
+	}
+
+	response.Success(c, data)
+}
