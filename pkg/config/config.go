@@ -164,6 +164,11 @@ func (c *Config) GetInt(key string) int {
 	return c.viper.GetInt(key)
 }
 
+// GetInt64 获取64位整数配置
+func (c *Config) GetInt64(key string) int64 {
+	return c.viper.GetInt64(key)
+}
+
 // GetBool 获取布尔配置
 func (c *Config) GetBool(key string) bool {
 	return c.viper.GetBool(key)

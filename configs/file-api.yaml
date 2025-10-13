@@ -1,0 +1,128 @@
+# 文件服务配置
+app:
+  name: file-api
+  port: 8086
+  read_timeout: 60s
+  write_timeout: 60s
+  idle_timeout: 120s
+  debug: true
+
+# 日志配置
+log:
+  level: debug
+  format: console # console 或 json
+  output: stdout  # stdout 或 file
+  file: ./logs/file-api.log
+
+# 数据库配置
+database:
+  driver: mysql # mysql, sqlite, postgres
+  dsn: root:password@tcp(localhost:3306)/ginforge?charset=utf8mb4&parseTime=True&loc=Local
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600s
+  log_level: 4 # 1:Silent, 2:Error, 3:Warn, 4:Info
+
+# Redis配置
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+  pool_size: 100
+  min_idle_conns: 10
+
+# 存储配置
+storage:
+  # 存储类型: local, oss, s3, minio
+  type: local
+  
+  # 本地存储配置
+  local:
+    # 存储基础路径
+    base_path: ./uploads
+  
+  # 阿里云OSS配置
+  oss:
+    endpoint: oss-cn-hangzhou.aliyuncs.com
+    access_key_id: your-access-key-id
+    access_key_secret: your-access-key-secret
+    bucket_name: your-bucket-name
+    region: cn-hangzhou
+  
+  # AWS S3配置
+  s3:
+    endpoint: s3.amazonaws.com
+    access_key_id: your-access-key-id
+    access_key_secret: your-access-key-secret
+    bucket_name: your-bucket-name
+    region: us-east-1
+  
+  # MinIO配置
+  minio:
+    endpoint: localhost:9000
+    access_key_id: minioadmin
+    access_key_secret: minioadmin
+    bucket_name: files
+    use_ssl: false
+  
+  # URL前缀（用于生成访问URL）
+  url_prefix: http://localhost:8086/uploads
+  
+  # 最大文件大小（字节）- 100MB
+  max_file_size: 104857600
+  
+  # 允许的文件类型
+  allowed_types:
+    - image/jpeg
+    - image/png
+    - image/gif
+    - image/webp
+    - application/pdf
+    - application/msword
+    - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    - application/vnd.ms-excel
+    - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    - application/zip
+    - text/plain
+    - video/mp4
+    - audio/mpeg
+  
+  # 允许的文件扩展名
+  allowed_exts:
+    - .jpg
+    - .jpeg
+    - .png
+    - .gif
+    - .webp
+    - .pdf
+    - .doc
+    - .docx
+    - .xls
+    - .xlsx
+    - .zip
+    - .txt
+    - .mp4
+    - .mp3
+
+# 跨域配置
+cors:
+  allowed_origins: ["*"]
+  allowed_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  allowed_headers: ["Origin", "Content-Type", "Accept", "Authorization", "X-Request-Id"]
+  exposed_headers: ["X-Request-Id"]
+  allow_credentials: true
+  max_age: 12h
+
+# 限流配置
+rate_limit:
+  enabled: true
+  # 每分钟允许的请求数
+  requests_per_minute: 60
+  # 上传文件每分钟允许的请求数
+  upload_requests_per_minute: 10
+
+# 监控配置
+monitor:
+  prometheus:
+    enabled: true
+    path: /metrics

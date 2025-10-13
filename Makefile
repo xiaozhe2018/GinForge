@@ -25,6 +25,7 @@ build:
 	@go build -o bin/gateway ./services/gateway/cmd/server
 	@go build -o bin/gateway-worker ./services/gateway-worker/cmd/server
 	@go build -o bin/demo ./services/demo/cmd/server
+	@go build -o bin/file-api ./services/file-api/cmd/server
 	@go build -o bin/ginforge ./cmd/cli
 	@echo "构建完成！"
 
@@ -44,15 +45,17 @@ run:
 	@go run ./services/gateway/cmd/server &
 	@go run ./services/gateway-worker/cmd/server &
 	@go run ./services/demo/cmd/server &
+	@go run ./services/file-api/cmd/server &
 	@echo "所有服务已启动！"
 	@echo "API网关: http://localhost:8080"
 	@echo "用户端API: http://localhost:8081"
 	@echo "商户端API: http://localhost:8082"
 	@echo "管理后台API: http://localhost:8083"
 	@echo "网关工作器: http://localhost:8084"
+	@echo "文件服务API: http://localhost:8086"
 
 # 需要清理/检查的端口（开发环境）
-PORTS=8080 8081 8082 8083 8084 8085
+PORTS=8080 8081 8082 8083 8084 8085 8086
 
 # 停止所有以 go run 启动的微服务（开发环境）
 stop:
@@ -122,11 +125,13 @@ swagger:
 	@swag init -g services/merchant-api/cmd/server/main.go -o services/merchant-api/docs
 	@swag init -g services/admin-api/cmd/server/main.go -o services/admin-api/docs
 	@swag init -g services/gateway/cmd/server/main.go -o services/gateway/docs
+	@swag init -g services/file-api/cmd/server/main.go -o services/file-api/docs
 	@echo "Swagger 文档生成完成！"
 	@echo "访问文档:"
 	@echo "  用户端: http://localhost:8081/swagger/index.html"
 	@echo "  商户端: http://localhost:8082/swagger/index.html"
 	@echo "  管理后台: http://localhost:8083/swagger/index.html"
+	@echo "  文件服务: http://localhost:8086/swagger/index.html"
 
 # 构建 Docker 镜像
 docker:
