@@ -13,7 +13,7 @@ import (
 )
 
 // NewRouter 创建路由
-func NewRouter(cfg *config.Config, log logger.Logger, fileHandler *handler.FileHandler) *gin.Engine {
+func NewRouter(cfg *config.Config, log logger.Logger, fileHandler *handler.FileHandler, chunkHandler *handler.ChunkHandler) *gin.Engine {
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -61,6 +61,28 @@ func NewRouter(cfg *config.Config, log logger.Logger, fileHandler *handler.FileH
 
 			// 统计信息
 			files.GET("/statistics", fileHandler.GetStatistics)
+
+			// 分片上传相关接口
+			chunks := files.Group("/chunks")
+			{
+				// 初始化分片上传
+				chunks.POST("/init", chunkHandler.InitiateChunkUpload)
+
+				// 上传分片
+				chunks.POST("/upload", chunkHandler.UploadChunk)
+
+				// 合并分片
+				chunks.POST("/merge", chunkHandler.MergeChunks)
+
+				// 获取分片上传状态
+				chunks.GET("/status/:upload_id", chunkHandler.GetChunkUploadStatus)
+
+				// 列出分片
+				chunks.GET("/list/:upload_id", chunkHandler.ListChunks)
+
+				// 中止分片上传
+				chunks.DELETE("/abort/:upload_id", chunkHandler.AbortChunkUpload)
+			}
 		}
 	}
 

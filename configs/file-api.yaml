@@ -33,13 +33,21 @@ redis:
 
 # 存储配置
 storage:
-  # 存储类型: local, oss, s3, minio
+  # 存储类型: local, oss, s3, minio, cos, qiniu
   type: local
   
   # 本地存储配置
   local:
     # 存储基础路径
     base_path: ./uploads
+    # 临时文件目录
+    temp_dir: ./uploads/temp
+    # 是否自动创建目录
+    auto_create_dir: true
+    # 文件权限
+    file_mode: 0644
+    # 目录权限
+    dir_mode: 0755
   
   # 阿里云OSS配置
   oss:
@@ -48,6 +56,16 @@ storage:
     access_key_secret: your-access-key-secret
     bucket_name: your-bucket-name
     region: cn-hangzhou
+    # 自定义域名（可选，用于CDN加速）
+    custom_domain: ""
+    # 是否使用内网endpoint
+    internal: false
+    # 路径前缀
+    prefix: ""
+    # 请求超时时间（秒）
+    timeout: 60
+    # 是否开启HTTPS
+    ssl: true
   
   # AWS S3配置
   s3:
@@ -56,6 +74,43 @@ storage:
     access_key_secret: your-access-key-secret
     bucket_name: your-bucket-name
     region: us-east-1
+    # 自定义域名（可选，用于CloudFront加速）
+    custom_domain: ""
+    # 路径前缀
+    prefix: ""
+    # 请求超时时间（秒）
+    timeout: 60
+    # 是否开启HTTPS
+    ssl: true
+    # 存储类型（STANDARD, REDUCED_REDUNDANCY, GLACIER等）
+    storage_class: STANDARD
+  
+  # 腾讯云COS配置
+  cos:
+    endpoint: cos.ap-guangzhou.myqcloud.com
+    access_key_id: your-access-key-id
+    access_key_secret: your-access-key-secret
+    bucket_name: your-bucket-name
+    region: ap-guangzhou
+    # 自定义域名
+    custom_domain: ""
+    # 路径前缀
+    prefix: ""
+    # 是否开启HTTPS
+    ssl: true
+  
+  # 七牛云配置
+  qiniu:
+    access_key: your-access-key
+    secret_key: your-secret-key
+    bucket_name: your-bucket-name
+    domain: your-bucket-domain.com
+    # 存储区域
+    zone: z0
+    # 是否使用HTTPS
+    use_https: true
+    # 路径前缀
+    prefix: ""
   
   # MinIO配置
   minio:
@@ -64,45 +119,249 @@ storage:
     access_key_secret: minioadmin
     bucket_name: files
     use_ssl: false
+    # 路径前缀
+    prefix: ""
+    # 请求超时时间（秒）
+    timeout: 60
   
   # URL前缀（用于生成访问URL）
   url_prefix: http://localhost:8086/uploads
   
-  # 最大文件大小（字节）- 100MB
-  max_file_size: 104857600
+  # 静态资源域名配置
+  domains:
+    # 是否使用自定义域名
+    use_custom_domain: false
+    
+    # 静态资源域名（生产环境使用）
+    static_domain: https://static.example.com
+    
+    # 上传服务域名（生产环境使用）
+    upload_domain: https://upload.example.com
+    
+    # CDN域名（可选，用于全球加速）
+    cdn_domain: https://cdn.example.com
+    
+    # 图片处理域名（可选，用于图片处理服务）
+    image_domain: https://img.example.com
   
-  # 允许的文件类型
-  allowed_types:
-    - image/jpeg
-    - image/png
-    - image/gif
-    - image/webp
-    - application/pdf
-    - application/msword
-    - application/vnd.openxmlformats-officedocument.wordprocessingml.document
-    - application/vnd.ms-excel
-    - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-    - application/zip
-    - text/plain
-    - video/mp4
-    - audio/mpeg
+  # 文件处理配置
+  processing:
+    # 是否启用图片处理
+    image_processing: false
+    
+    # 图片处理服务类型: local, cloud
+    image_service: local
+    
+    # 图片处理参数
+    image_params:
+      # 默认质量（1-100）
+      quality: 85
+      # 是否自动旋转
+      auto_orient: true
+      # 是否保留EXIF信息
+      strip_metadata: true
+      # 最大宽度
+      max_width: 4096
+      # 最大高度
+      max_height: 4096
+    
+    # 缩略图配置
+    thumbnails:
+      # 是否自动生成缩略图
+      auto_generate: false
+      # 缩略图尺寸
+      sizes:
+        - width: 150
+          height: 150
+          suffix: "_thumb"
+        - width: 300
+          height: 300
+          suffix: "_small"
+        - width: 800
+          height: 800
+          suffix: "_medium"
   
-  # 允许的文件扩展名
-  allowed_exts:
-    - .jpg
-    - .jpeg
-    - .png
-    - .gif
-    - .webp
-    - .pdf
-    - .doc
-    - .docx
-    - .xls
-    - .xlsx
-    - .zip
-    - .txt
-    - .mp4
-    - .mp3
+  # 安全配置
+  security:
+    # 是否启用防盗链
+    referer_check: false
+    # 允许的来源域名
+    allowed_referers:
+      - "*.example.com"
+      - localhost
+    # 是否允许空Referer
+    allow_empty_referer: true
+    # 签名URL过期时间（秒）
+    url_expire: 3600
+    # 是否启用签名URL
+    signed_url: false
+  
+  # 上传限制配置
+  upload_limits:
+    # 最大文件大小（字节）- 默认100MB
+    max_file_size: 104857600
+    
+    # 单次请求最大文件数
+    max_files_per_request: 10
+    
+    # 每分钟最大上传数量
+    max_uploads_per_minute: 30
+    
+    # 每天每用户最大上传容量（字节）- 1GB
+    max_daily_upload_size_per_user: 1073741824
+    
+    # 每天每用户最大上传数量
+    max_daily_uploads_per_user: 100
+    
+    # 并发上传数量限制
+    max_concurrent_uploads: 5
+    
+    # 分片上传配置
+    chunked_upload:
+      # 是否启用分片上传
+      enabled: true
+      # 分片大小（字节）- 5MB
+      chunk_size: 5242880
+      # 分片超时时间（秒）
+      chunk_timeout: 3600
+      # 分片存储目录
+      chunk_dir: ./uploads/chunks
+  
+  # 文件类型限制
+  file_types:
+    # 允许的MIME类型
+    allowed_mime_types:
+      # 图片
+      image:
+        - image/jpeg
+        - image/png
+        - image/gif
+        - image/webp
+        - image/svg+xml
+        - image/tiff
+        - image/bmp
+      # 文档
+      document:
+        - application/pdf
+        - application/msword
+        - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+        - application/vnd.ms-excel
+        - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+        - application/vnd.ms-powerpoint
+        - application/vnd.openxmlformats-officedocument.presentationml.presentation
+        - text/plain
+        - text/csv
+        - text/html
+        - application/rtf
+      # 压缩文件
+      archive:
+        - application/zip
+        - application/x-rar-compressed
+        - application/x-7z-compressed
+        - application/x-tar
+        - application/gzip
+      # 音频
+      audio:
+        - audio/mpeg
+        - audio/wav
+        - audio/ogg
+        - audio/webm
+        - audio/aac
+        - audio/flac
+      # 视频
+      video:
+        - video/mp4
+        - video/webm
+        - video/ogg
+        - video/quicktime
+        - video/x-msvideo
+        - video/x-flv
+    
+    # 允许的文件扩展名
+    allowed_extensions:
+      # 图片
+      image:
+        - .jpg
+        - .jpeg
+        - .png
+        - .gif
+        - .webp
+        - .svg
+        - .tiff
+        - .tif
+        - .bmp
+      # 文档
+      document:
+        - .pdf
+        - .doc
+        - .docx
+        - .xls
+        - .xlsx
+        - .ppt
+        - .pptx
+        - .txt
+        - .csv
+        - .html
+        - .rtf
+      # 压缩文件
+      archive:
+        - .zip
+        - .rar
+        - .7z
+        - .tar
+        - .gz
+      # 音频
+      audio:
+        - .mp3
+        - .wav
+        - .ogg
+        - .webm
+        - .aac
+        - .flac
+      # 视频
+      video:
+        - .mp4
+        - .webm
+        - .ogg
+        - .mov
+        - .avi
+        - .flv
+    
+    # 禁止的文件扩展名（安全考虑）
+    denied_extensions:
+      - .php
+      - .phtml
+      - .php3
+      - .php4
+      - .php5
+      - .php7
+      - .pht
+      - .phps
+      - .cgi
+      - .pl
+      - .py
+      - .asp
+      - .aspx
+      - .jsp
+      - .js
+      - .sh
+      - .bash
+      - .exe
+      - .dll
+      - .msi
+      - .bat
+      - .cmd
+      - .vb
+      - .vbs
+    
+    # 按用户类型限制文件类型
+    user_type_restrictions:
+      # 管理员可以上传所有类型
+      admin: ["image", "document", "archive", "audio", "video"]
+      # 普通用户只能上传图片和文档
+      user: ["image", "document"]
+      # 商户可以上传图片、文档和压缩文件
+      merchant: ["image", "document", "archive"]
 
 # 跨域配置
 cors:

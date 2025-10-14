@@ -9,7 +9,11 @@ import (
 	"gorm.io/gorm"
 
 	"goweb/pkg/logger"
+	"goweb/pkg/security"
 	"goweb/pkg/storage"
+	"goweb/pkg/storage/factory"
+	"goweb/pkg/upload"
+	"goweb/pkg/upload/chunked"
 	"goweb/services/file-api/internal/model"
 	"goweb/services/file-api/internal/repository"
 )
@@ -18,15 +22,48 @@ import (
 type FileService struct {
 	repo           repository.FileRepository
 	storageService *StorageService
+	storageFactory *factory.StorageFactory
+	storage        storage.Storage
+	uploader       upload.Uploader
+	chunkUploader  upload.ChunkUploader
+	security       *security.SecurityService
 	logger         logger.Logger
 	db             *gorm.DB
 }
 
 // NewFileService 创建文件服务
-func NewFileService(repo repository.FileRepository, storageService *StorageService, db *gorm.DB, log logger.Logger) *FileService {
+func NewFileService(
+	repo repository.FileRepository, 
+	storageService *StorageService, 
+	storageFactory *factory.StorageFactory,
+	storage storage.Storage,
+	db *gorm.DB, 
+	log logger.Logger,
+) *FileService {
+	// 创建简单上传器
+	simpleUploader := upload.NewSimpleUploader(storage, log)
+
+	// 创建分片上传器
+	chunkConfig := chunked.Config{
+		Enabled:      true,
+		ChunkSize:    5 * 1024 * 1024, // 5MB
+		ChunkTimeout: 3600,            // 1小时
+		ChunkDir:     "./uploads/chunks",
+		TempDir:      "./uploads/temp",
+	}
+	chunkUploader := chunked.New(chunkConfig, storage, log)
+
+	// 创建安全服务
+	securityService := security.NewSecurityService()
+	
 	return &FileService{
 		repo:           repo,
 		storageService: storageService,
+		storageFactory: storageFactory,
+		storage:        storage,
+		uploader:       simpleUploader,
+		chunkUploader:  chunkUploader,
+		security:       securityService,
 		logger:         log,
 		db:             db,
 	}
@@ -60,35 +97,54 @@ type UploadResponse struct {
 func (s *FileService) UploadFile(ctx context.Context, req *UploadRequest) (*UploadResponse, error) {
 	startTime := time.Now()
 
-	// 1. 上传文件到存储
-	fileInfo, err := s.storageService.UploadFile(ctx, req.File, req.SubPath)
+	// 检查文件安全性
+	if s.security != nil {
+		if err := s.security.ValidateFile(ctx, req.File.Filename, "", req.File.Size); err != nil {
+			s.createUploadLog(ctx, req, nil, err, startTime)
+			return nil, fmt.Errorf("file validation failed: %w", err)
+		}
+
+		if err := s.security.CheckUploadLimit(ctx, req.UserID, req.File.Size); err != nil {
+			s.createUploadLog(ctx, req, nil, err, startTime)
+			return nil, fmt.Errorf("upload limit exceeded: %w", err)
+		}
+	}
+
+	// 使用简单上传器上传文件
+	uploadReq := &upload.UploadRequest{
+		File:        req.File,
+		Description: req.Description,
+		Tags:        req.Tags,
+		SubPath:     req.SubPath,
+		UserID:      req.UserID,
+		UserType:    req.UserType,
+		IP:          req.IP,
+		Metadata:    map[string]interface{}{},
+	}
+
+	// 上传文件
+	response, err := s.uploader.Upload(ctx, uploadReq)
 	if err != nil {
 		// 记录上传失败日志
 		s.createUploadLog(ctx, req, nil, err, startTime)
 		return nil, fmt.Errorf("failed to upload file: %w", err)
 	}
 
-	// 2. 获取文件类型
-	fileType := s.storageService.GetFileTypeByMime(fileInfo.MimeType)
-	if fileType == "" {
-		fileType = s.storageService.GetFileTypeByExt(fileInfo.OriginalName)
-	}
-
-	// 3. 保存文件记录到数据库
+	// 保存文件记录到数据库
 	fileRecord := &model.FileRecord{
-		OriginalName: fileInfo.OriginalName,
-		FileName:     fileInfo.FileName,
-		RelativePath: fileInfo.RelativePath,
-		FileSize:     fileInfo.Size,
-		MimeType:     fileInfo.MimeType,
-		FileType:     fileType,
-		Hash:         fileInfo.Hash,
-		StorageType:  s.storageService.GetStorageType(),
-		URL:          fileInfo.URL,
+		OriginalName: response.OriginalName,
+		FileName:     response.FileName,
+		RelativePath: response.FileName, // 使用文件名作为相对路径
+		FileSize:     response.FileSize,
+		MimeType:     response.MimeType,
+		FileType:     response.FileType,
+		Hash:         response.Hash,
+		StorageType:  string(s.storage.Type()),
+		URL:          response.URL,
 		UploadedBy:   req.UserID,
 		UserType:     req.UserType,
 		UploadIP:     req.IP,
-		UploadTime:   fileInfo.UploadTime,
+		UploadTime:   response.UploadTime,
 		Description:  req.Description,
 		Tags:         req.Tags,
 		Status:       1, // 正常状态
@@ -96,27 +152,34 @@ func (s *FileService) UploadFile(ctx context.Context, req *UploadRequest) (*Uplo
 
 	if err := s.repo.Create(ctx, fileRecord); err != nil {
 		// 记录上传失败日志
-		s.createUploadLog(ctx, req, fileInfo, err, startTime)
+		s.createUploadLog(ctx, req, nil, err, startTime)
 		return nil, fmt.Errorf("failed to save file record: %w", err)
 	}
 
-	// 4. 记录上传成功日志
-	s.createUploadLog(ctx, req, fileInfo, nil, startTime)
-
-	// 5. 构建响应
-	response := &UploadResponse{
-		ID:           fileRecord.ID,
-		OriginalName: fileRecord.OriginalName,
-		FileName:     fileRecord.FileName,
-		FileSize:     fileRecord.FileSize,
-		FileType:     fileRecord.FileType,
-		MimeType:     fileRecord.MimeType,
-		URL:          fileRecord.URL,
-		Hash:         fileRecord.Hash,
-		UploadTime:   fileRecord.UploadTime,
+	// 记录上传
+	if s.security != nil {
+		if err := s.security.RecordUpload(ctx, req.UserID, req.File.Size); err != nil {
+			s.logger.Warn("Failed to record upload", "error", err)
+		}
 	}
 
-	return response, nil
+	// 记录上传成功日志
+	s.createUploadLog(ctx, req, nil, nil, startTime)
+
+	// 构建自定义响应
+	customResponse := &UploadResponse{
+		ID:           fileRecord.ID,
+		OriginalName: response.OriginalName,
+		FileName:     response.FileName,
+		FileSize:     response.FileSize,
+		FileType:     response.FileType,
+		MimeType:     response.MimeType,
+		URL:          response.URL,
+		Hash:         response.Hash,
+		UploadTime:   response.UploadTime,
+	}
+
+	return customResponse, nil
 }
 
 // 创建上传日志
@@ -131,6 +194,7 @@ func (s *FileService) createUploadLog(ctx context.Context, req *UploadRequest, f
 		UploadTime: time.Now(),
 		Success:    err == nil,
 		Duration:   duration,
+		UploadType: "simple",
 	}
 
 	if err != nil {

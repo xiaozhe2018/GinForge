@@ -76,6 +76,7 @@ interface UpdateProfileParams {
   name: string
   status: number
   role_ids: number[]
+  avatar?: string
 }
 
 // 修改密码参数

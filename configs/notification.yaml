@@ -1,0 +1,38 @@
+# 通知服务配置
+
+# 邮件配置
+email:
+  # SMTP服务器地址
+  host: smtp.example.com
+  # SMTP服务器端口
+  port: 587
+  # 用户名/邮箱地址
+  username: noreply@example.com
+  # 密码/授权码
+  password: your_password_here
+  # 发件人
+  from: noreply@example.com
+  # 发件人名称
+  from_name: GinForge系统
+  # 超时时间(秒)
+  timeout: 10
+  # 是否使用SSL
+  use_ssl: false
+
+# 短信配置
+sms:
+  # 服务提供商: aliyun, tencent
+  provider: aliyun
+  # API密钥
+  api_key: your_api_key_here
+  # API密钥
+  api_secret: your_api_secret_here
+  # API地址 (可选，默认使用服务商标准地址)
+  api_url: ""
+  # 超时时间(秒)
+  timeout: 5
+  # 签名
+  sign_name: GinForge
+  # 额外参数
+  extra_params:
+    region: cn-hangzhou

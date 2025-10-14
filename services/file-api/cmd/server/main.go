@@ -12,6 +12,9 @@ import (
 	"goweb/pkg/config"
 	"goweb/pkg/db"
 	"goweb/pkg/logger"
+	"goweb/pkg/security"
+	"goweb/pkg/storage"
+	"goweb/pkg/storage/factory"
 	"goweb/services/file-api/internal/handler"
 	"goweb/services/file-api/internal/model"
 	"goweb/services/file-api/internal/repository"
@@ -81,7 +84,33 @@ func main() {
 		maxFileSize = 104857600 // 100MB
 	}
 
-	// 初始化存储服务
+	// 初始化存储工厂
+	storageFactory := factory.New(log)
+
+	// 初始化本地存储
+	localStorage, err := storageFactory.CreateStorage(storage.StorageTypeLocal, map[string]interface{}{
+		"base_path": basePath,
+		"url_prefix": urlPrefix,
+	})
+	if err != nil {
+		log.Fatal("failed to initialize local storage", err)
+	}
+
+	// 创建安全服务
+	securityService := security.NewSecurityService()
+
+	// 添加文件验证器
+	allowedTypes := []string{"image/jpeg", "image/png", "image/gif", "application/pdf"}
+	allowedExts := []string{".jpg", ".jpeg", ".png", ".gif", ".pdf"}
+	forbiddenExts := []string{".php", ".exe", ".sh", ".bat"}
+	fileValidator := security.NewBasicFileValidator(maxFileSize, allowedTypes, allowedExts, forbiddenExts)
+	securityService.AddValidator(fileValidator)
+
+	// 添加上传限制器
+	uploadLimiter := security.NewBasicUploadLimiter(30, 1073741824, 100) // 30次/分钟，1GB/天，100文件/天
+	securityService.AddLimiter(uploadLimiter)
+
+	// 保持兼容性，创建旧的存储服务
 	storageConfig := &service.StorageConfig{
 		Type:          service.StorageType(storageType),
 		LocalBasePath: basePath,
@@ -98,13 +127,14 @@ func main() {
 	fileRepo := repository.NewFileRepository(database)
 
 	// 初始化服务层
-	fileService := service.NewFileService(fileRepo, storageService, database, log)
+	fileService := service.NewFileService(fileRepo, storageService, storageFactory, localStorage, database, log)
 
 	// 初始化处理器
 	fileHandler := handler.NewFileHandler(fileService, cfg, log)
+	chunkHandler := handler.NewChunkHandler(fileService, cfg, log)
 
 	// 初始化路由
-	r := router.NewRouter(cfg, log, fileHandler)
+	r := router.NewRouter(cfg, log, fileHandler, chunkHandler)
 
 	// 启动HTTP服务 - 文件服务固定使用8086端口
 	port := 8086

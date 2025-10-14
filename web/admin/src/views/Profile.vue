@@ -171,8 +171,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Monitor, Warning, Check } from '@element-plus/icons-vue'
+import { User, Lock, Monitor, Warning, Check, Upload } from '@element-plus/icons-vue'
 import * as authApi from '@/api/auth'
+import * as fileApi from '@/api/file'
 
 // 个人信息表单
 const profileFormRef = ref()
@@ -301,7 +302,8 @@ const handleUpdateProfile = async () => {
       phone: profileForm.phone,
       name: profileForm.name,
       status: profileForm.status,
-      role_ids: profileForm.role_ids
+      role_ids: profileForm.role_ids,
+      avatar: profileForm.avatar
     }
     
     await authApi.updateProfile(updateData)
@@ -311,7 +313,8 @@ const handleUpdateProfile = async () => {
       ...JSON.parse(localStorage.getItem('admin_user_info') || '{}'),
       email: profileForm.email,
       phone: profileForm.phone,
-      name: profileForm.name
+      name: profileForm.name,
+      avatar: profileForm.avatar
     }
     localStorage.setItem('admin_user_info', JSON.stringify(updatedUser))
     
@@ -332,7 +335,88 @@ const handleResetProfile = () => {
 
 // 头像上传
 const handleAvatarUpload = () => {
-  ElMessage.info('头像上传功能待实现')
+  // 创建一个隐藏的文件输入框
+  const fileInput = document.createElement('input')
+  fileInput.type = 'file'
+  fileInput.accept = 'image/*' // 只接受图片文件
+  fileInput.style.display = 'none'
+  document.body.appendChild(fileInput)
+  
+  // 点击文件输入框
+  fileInput.click()
+  
+  // 监听文件选择事件
+  fileInput.onchange = async (event) => {
+    const target = event.target as HTMLInputElement
+    const file = target.files?.[0]
+    
+    if (!file) {
+      document.body.removeChild(fileInput)
+      return
+    }
+    
+    // 验证文件类型和大小
+    if (!file.type.startsWith('image/')) {
+      ElMessage.error('请选择图片文件')
+      document.body.removeChild(fileInput)
+      return
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB限制
+      ElMessage.error('图片大小不能超过 5MB')
+      document.body.removeChild(fileInput)
+      return
+    }
+    
+    try {
+      // 显示上传中提示
+      const loadingMessage = ElMessage({
+        message: '正在上传头像...',
+        type: 'info',
+        duration: 0
+      })
+      
+      // 上传文件
+      const result = await fileApi.uploadFile(file, {
+        sub_path: 'avatars',
+        description: `用户${profileForm.username}的头像`,
+        tags: 'avatar',
+        user_id: JSON.parse(localStorage.getItem('admin_user_info') || '{}').id,
+        user_type: 'admin'
+      })
+      
+      // 关闭上传中提示
+      loadingMessage.close()
+      
+      // 更新头像 URL
+      profileForm.avatar = result.url
+      
+      // 更新个人信息
+      await authApi.updateProfile({
+        email: profileForm.email,
+        phone: profileForm.phone,
+        name: profileForm.name,
+        status: profileForm.status,
+        role_ids: profileForm.role_ids,
+        avatar: profileForm.avatar
+      })
+      
+      // 更新 localStorage 中的用户信息
+      const updatedUser = {
+        ...JSON.parse(localStorage.getItem('admin_user_info') || '{}'),
+        avatar: profileForm.avatar
+      }
+      localStorage.setItem('admin_user_info', JSON.stringify(updatedUser))
+      
+      ElMessage.success('头像更新成功')
+    } catch (error) {
+      console.error('头像上传失败:', error)
+      ElMessage.error('头像上传失败')
+    } finally {
+      // 移除文件输入框
+      document.body.removeChild(fileInput)
+    }
+  }
 }
 
 // 修改密码

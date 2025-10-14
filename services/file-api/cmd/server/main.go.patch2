@@ -1,0 +1,34 @@
+--- main.go	2025-10-14 20:00:00
++++ main.go	2025-10-14 20:00:00
+@@ -79,8 +79,15 @@
+ 	// 创建文件服务
+ 	fileService := service.NewFileService(fileRepo, storageService, db, log)
+ 	
++	// 创建安全服务
++	securityService := service.NewSecurityService(enhancedConfig, log)
++	
++	// 创建分片服务
++	chunkService := service.NewChunkService(enhancedConfig, fileService, storageService, securityService, fileRepo, db, log)
++	
+ 	// 创建文件处理器
+ 	fileHandler := handler.NewFileHandler(fileService, log)
++	// 创建分片处理器
++	chunkHandler := handler.NewChunkHandler(chunkService, log)
+ 
+ 	// 创建路由
+ 	router := router.NewRouter(cfg, log, fileHandler)
+@@ -104,4 +111,14 @@
+ 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+ 		log.Fatal("Failed to start server", err)
+ 	}
++	
++	// 启动定期清理过期分片的goroutine
++	go func() {
++		ticker := time.NewTicker(10 * time.Minute)
++		defer ticker.Stop()
++		for range ticker.C {
++			log.Info("Cleaning up expired chunk uploads")
++			chunkService.CleanupExpiredUploads()
++		}
++	}()
+ }

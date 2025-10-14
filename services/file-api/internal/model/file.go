@@ -44,6 +44,7 @@ type FileUploadLog struct {
 	Success      bool      `json:"success" gorm:"type:tinyint(1);comment:是否成功"`
 	ErrorMessage string    `json:"error_message" gorm:"type:text;comment:错误信息"`
 	Duration     int64     `json:"duration" gorm:"type:bigint;comment:上传耗时(毫秒)"`
+	UploadType   string    `json:"upload_type" gorm:"type:varchar(20);comment:上传类型(simple/chunked)"`
 }
 
 // TableName 表名

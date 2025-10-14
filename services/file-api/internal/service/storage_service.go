@@ -13,6 +13,7 @@ import (
 
 	"goweb/pkg/logger"
 	"goweb/pkg/storage"
+	"goweb/pkg/storage/factory"
 )
 
 // StorageType 存储类型
@@ -82,7 +83,15 @@ func NewStorageService(config *StorageConfig, log logger.Logger) (*StorageServic
 
 	switch config.Type {
 	case StorageTypeLocal:
-		store = storage.NewLocalStorage(config.LocalBasePath, log)
+		// 创建本地存储实现
+		localConfig := map[string]interface{}{
+			"base_path": config.LocalBasePath,
+			"url_prefix": config.URLPrefix,
+		}
+		
+		// 使用存储工厂创建
+		factory := factory.New(log)
+		store, err = factory.CreateStorage(storage.StorageTypeLocal, localConfig)
 	case StorageTypeOSS:
 		// TODO: 实现OSS存储
 		return nil, errors.New("OSS storage not implemented yet")
