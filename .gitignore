@@ -6,7 +6,7 @@
 # 编译后的二进制文件
 bin/
 server
-admin-api
+bin/admin-api
 cli
 *.exe
 *.exe~
