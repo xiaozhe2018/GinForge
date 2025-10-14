@@ -47,6 +47,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 				"product":  "/api/v1/product",
 				"order":    "/api/v1/order",
 				"admin":    "/api/v1/admin",
+				"files":    "/api/v1/files",
 			},
 		})
 	})
@@ -116,6 +117,18 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 					target = "http://localhost:8083"
 				}
 				proxyToService(c, target, "/api/v1/admin")
+			})
+		}
+
+		// 文件服务API代理
+		files := api.Group("/files")
+		{
+			files.Any("/*path", func(c *gin.Context) {
+				target := cfg.GetString("external_services.file_api_url")
+				if target == "" {
+					target = "http://localhost:8086"
+				}
+				proxyToService(c, target, "/api/v1/files")
 			})
 		}
 	}

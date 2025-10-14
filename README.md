@@ -173,27 +173,36 @@ cd web/admin && npm install && npm run dev
 
 ```
 goweb/
+├── bin/                    # 编译后的二进制文件（不提交到Git）
+│   ├── admin-api          # 管理后台服务
+│   ├── user-api           # 用户端服务
+│   ├── merchant-api       # 商户端服务
+│   ├── gateway            # API网关
+│   ├── gateway-worker     # 网关工作器
+│   ├── demo               # 示例服务
+│   ├── file-api           # 文件上传服务
+│   └── ginforge           # CLI工具
 ├── pkg/                    # 共享基础库
 │   ├── config/            # 配置管理
 │   ├── logger/            # 日志系统
 │   ├── middleware/        # 中间件
 │   ├── response/          # 统一响应
-│   ├── db/               # 数据库管理
-│   ├── cache/            # 缓存系统
-│   ├── model/            # 数据模型
-│   ├── utils/            # 工具函数
-│   ├── testing/          # 测试框架
-│   ├── mesh/             # 服务网格
+│   ├── db/                # 数据库管理
+│   ├── redis/             # Redis管理
+│   ├── storage/           # 文件存储
+│   ├── model/             # 数据模型
+│   ├── utils/             # 工具函数
 │   └── ...
-├── services/              # 微服务
+├── services/              # 微服务（源代码）
 │   ├── user-api/         # 用户端API
 │   ├── merchant-api/     # 商户端API
 │   ├── admin-api/        # 管理后台API
 │   ├── gateway/          # API网关
 │   ├── gateway-worker/   # 网关工作器
+│   ├── file-api/         # 文件上传服务
 │   └── demo/             # 示例服务
 ├── cmd/                   # 命令行工具
-│   └── cli/              # CLI工具
+│   └── cli/              # CLI工具源代码
 ├── templates/             # 代码生成模板
 ├── deployments/           # 部署配置
 │   ├── docker/           # Docker配置

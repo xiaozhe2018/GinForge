@@ -141,12 +141,18 @@ microservices:
     port: 8080
     health_path: "/healthz"
     metrics_path: "/metrics"
+  file_api:
+    name: "file-api"
+    port: 8086
+    health_path: "/healthz"
+    metrics_path: "/metrics"
 
 # 外部服务配置
 external_services:
   user_api_url: "http://localhost:8081"
   merchant_api_url: "http://localhost:8082"
   admin_api_url: "http://localhost:8083"
+  file_api_url: "http://localhost:8086"
 
 # 文件上传配置
 upload:

@@ -6,78 +6,157 @@ services:
     build:
       context: ..
       dockerfile: deployments/docker/Dockerfile
-    command: ["./user-api"]
+    command: ["./bin/user-api"]
     ports:
-      - "8081:8080"
+      - "8081:8081"
     environment:
       - SERVICE_NAME=user-api
-      - PORT=8080
+      - APP_PORT=8081
       - DB_DRIVER=sqlite
       - DB_DSN=file:data/user.db
-      - JWT_SECRET=your-secret-key
+      - JWT_SECRET=your-secret-key-change-in-production
     volumes:
       - user_data:/app/data
+      - user_uploads:/app/uploads
     networks:
-      - goweb-network
+      - ginforge-network
+    restart: unless-stopped
 
   # 商户端API服务
   merchant-api:
     build:
       context: ..
       dockerfile: deployments/docker/Dockerfile
-    command: ["./merchant-api"]
+    command: ["./bin/merchant-api"]
     ports:
-      - "8082:8080"
+      - "8082:8082"
     environment:
       - SERVICE_NAME=merchant-api
-      - PORT=8080
+      - APP_PORT=8082
       - DB_DRIVER=sqlite
       - DB_DSN=file:data/merchant.db
-      - JWT_SECRET=your-secret-key
+      - JWT_SECRET=your-secret-key-change-in-production
     volumes:
       - merchant_data:/app/data
+      - merchant_uploads:/app/uploads
     networks:
-      - goweb-network
+      - ginforge-network
+    restart: unless-stopped
 
   # 管理后台API服务
   admin-api:
     build:
       context: ..
       dockerfile: deployments/docker/Dockerfile
-    command: ["./admin-api"]
+    command: ["./bin/admin-api"]
     ports:
-      - "8083:8080"
+      - "8083:8083"
     environment:
       - SERVICE_NAME=admin-api
-      - PORT=8080
+      - APP_PORT=8083
       - DB_DRIVER=sqlite
       - DB_DSN=file:data/admin.db
-      - JWT_SECRET=your-secret-key
+      - JWT_SECRET=your-secret-key-change-in-production
     volumes:
       - admin_data:/app/data
+      - admin_uploads:/app/uploads
     networks:
-      - goweb-network
+      - ginforge-network
+    restart: unless-stopped
+
+  # 文件上传服务
+  file-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["./bin/file-api"]
+    ports:
+      - "8086:8086"
+    environment:
+      - SERVICE_NAME=file-api
+      - APP_PORT=8086
+      - DB_DRIVER=sqlite
+      - DB_DSN=file:data/file.db
+      - STORAGE_TYPE=local
+      - STORAGE_LOCAL_BASE_PATH=/app/uploads
+      - STORAGE_URL_PREFIX=http://localhost:8086/uploads
+      - STORAGE_MAX_FILE_SIZE=104857600
+    volumes:
+      - file_data:/app/data
+      - file_uploads:/app/uploads
+    networks:
+      - ginforge-network
+    restart: unless-stopped
 
   # API网关
   gateway:
     build:
       context: ..
       dockerfile: deployments/docker/Dockerfile
-    command: ["./gateway"]
+    command: ["./bin/gateway"]
     ports:
       - "8080:8080"
     environment:
       - SERVICE_NAME=gateway
-      - PORT=8080
-      - USER_API_ADDR=http://user-api:8080
-      - MERCHANT_API_ADDR=http://merchant-api:8080
-      - ADMIN_API_ADDR=http://admin-api:8080
+      - APP_PORT=8080
+      - USER_API_ADDR=http://user-api:8081
+      - MERCHANT_API_ADDR=http://merchant-api:8082
+      - ADMIN_API_ADDR=http://admin-api:8083
+      - FILE_API_ADDR=http://file-api:8086
     depends_on:
       - user-api
       - merchant-api
       - admin-api
+      - file-api
     networks:
-      - goweb-network
+      - ginforge-network
+    restart: unless-stopped
+
+  # 网关工作器
+  gateway-worker:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    command: ["./bin/gateway-worker"]
+    ports:
+      - "8084:8084"
+    environment:
+      - SERVICE_NAME=gateway-worker
+      - APP_PORT=8084
+    volumes:
+      - worker_data:/app/data
+    networks:
+      - ginforge-network
+    restart: unless-stopped
+
+  # MySQL数据库（可选，用于生产环境）
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: ginforge
+      MYSQL_USER: ginforge
+      MYSQL_PASSWORD: ginforge_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - ginforge-network
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ginforge-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
 
   # 前端静态文件服务与反向代理
   nginx:
@@ -85,19 +164,27 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ../web:/usr/share/nginx/html
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../web/admin/dist:/usr/share/nginx/html
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - gateway
     networks:
-      - goweb-network
+      - ginforge-network
     restart: unless-stopped
 
 volumes:
   user_data:
   merchant_data:
   admin_data:
+  file_data:
+  worker_data:
+  user_uploads:
+  merchant_uploads:
+  admin_uploads:
+  file_uploads:
+  mysql_data:
+  redis_data:
 
 networks:
-  goweb-network:
+  ginforge-network:
     driver: bridge
