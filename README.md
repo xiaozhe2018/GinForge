@@ -30,33 +30,64 @@ GinForge 是基于 **Go + Gin + Vue3** 的企业级微服务开发框架，提�
 
 ### 环境要求
 
+#### 开发环境
 | 软件 | 版本要求 | 说明 |
 |------|---------|------|
 | Go | 1.20+ | 后端开发语言 |
-| Node.js | 16+ | 前端开发环境 |
-| MySQL | 5.7+ | 主数据库（开发环境可用 SQLite） |
-| Redis | 6.0+ | 缓存和队列（可选） |
-| Docker | 20+ | 容器化部署（可选） |
+| Node.js | 20+ | 前端开发环境 |
+| SQLite | - | 自动创建（无需安装） |
 
-### ⚡ 30秒快速启动
+#### 生产环境
+| 软件 | 版本要求 | 说明 |
+|------|---------|------|
+| Docker | 20+ | 容器运行环境 |
+| Docker Compose | 1.29+ | 容器编排工具 |
+| MySQL | 8.0+ | 生产数据库（自动部署） |
+| Redis | 7.0+ | 缓存服务（自动部署） |
+
+### ⚡ 开发环境 - 30秒快速启动
 
 ```bash
 # 1. 克隆项目
 git clone https://github.com/xiaozhe2018/GinForge.git
 cd GinForge
 
-# 2. 安装后端依赖
-go mod tidy
+# 2. 初始化项目（一次性）
+./scripts/init.sh
 
-# 3. 启动后端服务（使用 SQLite，无需 MySQL）
-go run ./services/admin-api/cmd/server
+# 3. 启动所有后端服务
+./scripts/start-services.sh
 
 # 4. 启动前端（新终端）
-cd web/admin && npm install && npm run dev
+cd web/admin && npm run dev
 ```
+
+### 🚀 生产环境 - 一键部署
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/xiaozhe2018/GinForge.git
+cd GinForge
+
+# 2. 配置生产环境
+cd deployments
+cp env.production.example .env.production
+vim .env.production  # 修改密码和密钥
+
+# 3. 一键部署（自动构建前端+启动所有服务）
+./deploy.sh
+```
+
+**部署包含：**
+- 🔹 7个 Go 微服务
+- 🔹 Vue3 管理后台
+- 🔹 MySQL 8.0 数据库
+- 🔹 Redis 7.x 缓存
+- 🔹 Nginx 反向代理
 
 ### 访问系统
 
+#### 开发环境
 | 服务 | 地址 | 说明 |
 |------|------|------|
 | **前端管理后台** 🎉 | http://localhost:3000 | 默认账号：admin/admin123 |
@@ -65,6 +96,14 @@ cd web/admin && npm install && npm run dev
 | 用户端API | http://localhost:8081 | 用户服务 |
 | 商户端API | http://localhost:8082 | 商户服务 |
 | API网关 | http://localhost:8080 | 统一网关 |
+
+#### 生产环境
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| **前端+API** 🎉 | http://localhost | Nginx 统一入口 |
+| API 网关 | http://localhost:8080 | 直接访问（调试用） |
+| 健康检查 | http://localhost/healthz | 服务健康状态 |
+| API 文档 | http://localhost/swagger | Swagger 文档 |
 
 ## 📚 完整文档
 
@@ -411,12 +450,86 @@ curl -X POST http://localhost:8083/api/v1/admin/users \
 
 ### 🐳 部署
 
-#### Docker 部署
+#### 开发环境部署
+
+```bash
+# 方式一：使用脚本（推荐）
+./scripts/start-services.sh
+
+# 方式二：使用 Makefile
+make run
+
+# 停止服务
+./scripts/stop-services.sh
+# 或
+make stop
+```
+
+**特点：**
+- ✅ 快速启动，适合开发调试
+- ✅ 使用 SQLite，无需外部数据库
+- ✅ 热重载支持
+- ✅ 日志输出到文件
+
+#### 生产环境部署（Docker）⭐
+
+**一键部署（推荐）：**
+
+```bash
+# 使用自动化部署脚本
+./deployments/deploy.sh
+```
+
+**手动部署：**
+
+```bash
+# 1. 配置环境变量
+cd deployments
+cp env.production.example .env.production
+vim .env.production  # 修改数据库密码、JWT密钥等
+
+# 2. 构建前端
+cd ../web/admin
+npm install && npm run build
+
+# 3. 启动所有服务（包括 MySQL + Redis + Nginx）
+cd ../../deployments
+docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# 4. 查看服务状态
+docker-compose -f docker-compose.prod.yml ps
+
+# 5. 查看日志
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+**生产环境特性：**
+- ✅ MySQL 8.0 数据库
+- ✅ Redis 7.x 缓存
+- ✅ Nginx 反向代理
+- ✅ 健康检查（自动重启）
+- ✅ 资源限制（CPU/内存）
+- ✅ 日志轮转（自动清理）
+- ✅ 数据持久化（Docker Volumes）
+- ✅ 环境变量隔离
+- ✅ 安全加固（强密码、网络隔离）
+- ✅ 零停机更新
+
+**访问地址：**
+```
+前端: http://localhost         (Nginx 统一入口)
+API:  http://localhost/api      (通过 Gateway)
+文档: http://localhost/swagger  (API 文档)
+```
+
+**详细文档：** [生产环境部署指南](./deployments/PRODUCTION_DEPLOYMENT.md)
+
+#### Docker Compose 开发环境
 ```bash
 # 构建镜像
 make docker
 
-# 使用 Docker Compose 启动完整环境
+# 使用 Docker Compose 启动（开发版本）
 make compose
 
 # 查看运行状态

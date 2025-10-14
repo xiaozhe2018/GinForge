@@ -56,8 +56,10 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import * as authApi from '@/api/auth'
 import { resetRedirectFlag } from '@/api/index'
+import { useWebSocketStore } from '@/stores/websocket'
 
 const router = useRouter()
+const wsStore = useWebSocketStore()
 
 // 组件挂载时重置重定向标志
 onMounted(() => {
@@ -103,6 +105,9 @@ const handleLogin = async () => {
     localStorage.setItem('admin_user_info', JSON.stringify(result.user))
     localStorage.setItem('admin_permissions', JSON.stringify(result.permissions || []))
     localStorage.setItem('admin_menus', JSON.stringify(result.menus || []))
+    
+    // 连接WebSocket
+    wsStore.connect(result.token)
     
     ElMessage.success('登录成功')
     router.push('/dashboard')

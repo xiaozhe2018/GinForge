@@ -1,0 +1,456 @@
+version: '3.8'
+
+# 生产环境 Docker Compose 配置
+# 使用方法: docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+services:
+  # ============================================
+  # 数据库服务
+  # ============================================
+  mysql:
+    image: mysql:8.0
+    container_name: ginforge-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../database/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - ginforge-network
+    restart: always
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_connections=1000
+      - --innodb_buffer_pool_size=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ============================================
+  # Redis 缓存服务
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: ginforge-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - ginforge-network
+    restart: always
+    command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD} --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  # ============================================
+  # 后端微服务
+  # ============================================
+  
+  # 用户服务
+  user-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: ginforge-user-api
+    command: ["./bin/user-api"]
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_PORT=${USER_API_PORT}
+      - DB_DRIVER=${DB_DRIVER}
+      - DB_HOST=${MYSQL_HOST}
+      - DB_PORT=${MYSQL_PORT}
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - user_uploads:/app/uploads
+      - ./configs/config.prod.yaml:/app/configs/config.yaml:ro
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${USER_API_PORT}/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 商户服务
+  merchant-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: ginforge-merchant-api
+    command: ["./bin/merchant-api"]
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_PORT=${MERCHANT_API_PORT}
+      - DB_DRIVER=${DB_DRIVER}
+      - DB_HOST=${MYSQL_HOST}
+      - DB_PORT=${MYSQL_PORT}
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - merchant_uploads:/app/uploads
+      - ./configs/config.prod.yaml:/app/configs/config.yaml:ro
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${MERCHANT_API_PORT}/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 管理后台服务
+  admin-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: ginforge-admin-api
+    command: ["./bin/admin-api"]
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_PORT=${ADMIN_API_PORT}
+      - DB_DRIVER=${DB_DRIVER}
+      - DB_HOST=${MYSQL_HOST}
+      - DB_PORT=${MYSQL_PORT}
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - admin_uploads:/app/uploads
+      - ./configs/config.prod.yaml:/app/configs/config.yaml:ro
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${ADMIN_API_PORT}/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 文件服务
+  file-api:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: ginforge-file-api
+    command: ["./bin/file-api"]
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_PORT=${FILE_API_PORT}
+      - DB_DRIVER=${DB_DRIVER}
+      - DB_HOST=${MYSQL_HOST}
+      - DB_PORT=${MYSQL_PORT}
+      - DB_DATABASE=${MYSQL_DATABASE}
+      - DB_USERNAME=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - STORAGE_TYPE=${STORAGE_TYPE}
+      - STORAGE_MAX_FILE_SIZE=${STORAGE_MAX_FILE_SIZE}
+      - STORAGE_URL_PREFIX=${STORAGE_URL_PREFIX}
+    volumes:
+      - file_uploads:/app/uploads
+      - ./configs/config.prod.yaml:/app/configs/config.yaml:ro
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${FILE_API_PORT}/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # API 网关
+  gateway:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: ginforge-gateway
+    command: ["./bin/gateway"]
+    ports:
+      - "${GATEWAY_PORT}:8080"
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_PORT=8080
+      - USER_API_ADDR=http://user-api:${USER_API_PORT}
+      - MERCHANT_API_ADDR=http://merchant-api:${MERCHANT_API_PORT}
+      - ADMIN_API_ADDR=http://admin-api:${ADMIN_API_PORT}
+      - FILE_API_ADDR=http://file-api:${FILE_API_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - RATE_LIMIT_RPS=${RATE_LIMIT_RPS}
+      - RATE_LIMIT_BURST=${RATE_LIMIT_BURST}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    volumes:
+      - ./configs/config.prod.yaml:/app/configs/config.yaml:ro
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      user-api:
+        condition: service_healthy
+      merchant-api:
+        condition: service_healthy
+      admin-api:
+        condition: service_healthy
+      file-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # 网关工作器
+  gateway-worker:
+    build:
+      context: ..
+      dockerfile: deployments/docker/Dockerfile
+    container_name: ginforge-gateway-worker
+    command: ["./bin/gateway-worker"]
+    environment:
+      - APP_ENV=${APP_ENV}
+      - APP_DEBUG=${APP_DEBUG}
+      - APP_PORT=${GATEWAY_WORKER_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    volumes:
+      - worker_data:/app/data
+      - ./configs/config.prod.yaml:/app/configs/config.yaml:ro
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Nginx 反向代理
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: ginforge-nginx
+    ports:
+      - "${NGINX_PORT}:80"
+      - "${NGINX_HTTPS_PORT}:443"
+    volumes:
+      - ../web/admin/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro  # SSL 证书目录
+      - nginx_logs:/var/log/nginx
+    networks:
+      - ginforge-network
+    restart: always
+    depends_on:
+      gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ============================================
+# 数据卷 (持久化存储)
+# ============================================
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  user_uploads:
+    driver: local
+  merchant_uploads:
+    driver: local
+  admin_uploads:
+    driver: local
+  file_uploads:
+    driver: local
+  worker_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# ============================================
+# 网络配置
+# ============================================
+networks:
+  ginforge-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+

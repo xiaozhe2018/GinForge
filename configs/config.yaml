@@ -146,6 +146,16 @@ microservices:
     port: 8086
     health_path: "/healthz"
     metrics_path: "/metrics"
+  websocket_gateway:
+    name: "websocket-gateway"
+    port: 8087
+    health_path: "/healthz"
+    metrics_path: "/metrics"
+
+# WebSocket 配置
+websocket:
+  enabled: true
+  gateway_url: "ws://localhost:8087"  # WebSocket Gateway 地址
 
 # 外部服务配置
 external_services:

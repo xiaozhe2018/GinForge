@@ -60,11 +60,14 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 		log.Warn("Redis is disabled, token blacklist feature will not work")
 	}
 
+	// WebSocket 功能已移至独立的 websocket-gateway 服务 (8087)
+
 	// 创建服务实例
 	userService := service.NewUserService(db, cfg, redisClient)
 	roleService := service.NewRoleService(db, cfg, redisClient)
 	menuService := service.NewMenuService(db, cfg, redisClient)
 	permissionService := service.NewPermissionService(db, cfg, redisClient)
+	notificationService := service.NewNotificationService(redisClient)
 
 	// 设置服务层日志
 	userService.SetLogger(log)
@@ -78,6 +81,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 	roleHandler := handler.NewAdminRoleHandler(roleService)
 	menuHandler := handler.NewAdminMenuHandler(menuService)
 	permissionHandler := handler.NewAdminPermissionHandler(permissionService)
+	notificationHandler := handler.NewNotificationHandler(notificationService)
 
 	// 设置处理器日志
 	authHandler.SetLogger(log)
@@ -85,6 +89,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 	roleHandler.SetLogger(log)
 	menuHandler.SetLogger(log)
 	permissionHandler.SetLogger(log)
+	notificationHandler.SetLogger(log)
 
 	// API路由
 	api := r.Group("/api/v1")
@@ -134,8 +139,19 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 			adminGroup.GET("/permissions/:id", permissionHandler.GetPermission)
 			adminGroup.PUT("/permissions/:id", permissionHandler.UpdatePermission)
 			adminGroup.DELETE("/permissions/:id", permissionHandler.DeletePermission)
+			
+			// 通知管理
+			notifications := adminGroup.Group("/notifications")
+			{
+				notifications.POST("/system", notificationHandler.SendSystemNotification)
+				notifications.POST("/users/:user_id", notificationHandler.SendUserNotification)
+				notifications.POST("/orders", notificationHandler.SendOrderNotification)
+			}
 		}
 	}
+
+	// 注意：WebSocket 功能已移至独立的 websocket-gateway 服务 (端口 8087)
+	// 前端应连接: ws://localhost:8087/ws
 
 	return r
 }

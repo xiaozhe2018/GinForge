@@ -42,12 +42,6 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 			"endpoints": gin.H{
 				"health":   "/healthz",
 				"api":      "/api/v1",
-				"user":     "/api/v1/user",
-				"merchant": "/api/v1/merchant",
-				"product":  "/api/v1/product",
-				"order":    "/api/v1/order",
-				"admin":    "/api/v1/admin",
-				"files":    "/api/v1/files",
 			},
 		})
 	})
@@ -64,11 +58,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 		user := api.Group("/user")
 		{
 			user.Any("/*path", func(c *gin.Context) {
-				target := cfg.GetString("external_services.user_api_url")
-				if target == "" {
-					target = "http://localhost:8081"
-				}
-				proxyToService(c, target, "/api/v1/user")
+				proxyToService(c, cfg.GetString("external_services.user_api_url"), "/api/v1/user")
 			})
 		}
 
@@ -76,35 +66,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 		merchant := api.Group("/merchant")
 		{
 			merchant.Any("/*path", func(c *gin.Context) {
-				target := cfg.GetString("external_services.merchant_api_url")
-				if target == "" {
-					target = "http://localhost:8082"
-				}
-				proxyToService(c, target, "/api/v1/merchant")
-			})
-		}
-
-		// 商品API代理
-		product := api.Group("/product")
-		{
-			product.Any("/*path", func(c *gin.Context) {
-				target := cfg.GetString("external_services.merchant_api_url")
-				if target == "" {
-					target = "http://localhost:8082"
-				}
-				proxyToService(c, target, "/api/v1/product")
-			})
-		}
-
-		// 订单API代理
-		order := api.Group("/order")
-		{
-			order.Any("/*path", func(c *gin.Context) {
-				target := cfg.GetString("external_services.merchant_api_url")
-				if target == "" {
-					target = "http://localhost:8082"
-				}
-				proxyToService(c, target, "/api/v1/order")
+				proxyToService(c, cfg.GetString("external_services.merchant_api_url"), "/api/v1/merchant")
 			})
 		}
 
@@ -112,11 +74,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 		admin := api.Group("/admin")
 		{
 			admin.Any("/*path", func(c *gin.Context) {
-				target := cfg.GetString("external_services.admin_api_url")
-				if target == "" {
-					target = "http://localhost:8083"
-				}
-				proxyToService(c, target, "/api/v1/admin")
+				proxyToService(c, cfg.GetString("external_services.admin_api_url"), "/api/v1/admin")
 			})
 		}
 
@@ -124,11 +82,7 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 		files := api.Group("/files")
 		{
 			files.Any("/*path", func(c *gin.Context) {
-				target := cfg.GetString("external_services.file_api_url")
-				if target == "" {
-					target = "http://localhost:8086"
-				}
-				proxyToService(c, target, "/api/v1/files")
+				proxyToService(c, cfg.GetString("external_services.file_api_url"), "/api/v1/files")
 			})
 		}
 	}
@@ -138,44 +92,33 @@ func NewRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 
 // proxyToService 代理到后端服务
 func proxyToService(c *gin.Context, targetAddr, pathPrefix string) {
+	if targetAddr == "" {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service not configured"})
+		return
+	}
+
 	path := c.Param("path")
 	if path == "" {
 		path = "/"
 	}
-
-	// 确保路径以 / 开头
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
 
 	targetURL := targetAddr + pathPrefix + path
-	logger := logger.New("gateway", "info")
-	logger.Info("proxying request", "target", targetURL, "method", c.Request.Method)
-
+	
 	// 创建HTTP客户端
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+	client := &http.Client{Timeout: 30 * time.Second}
 
 	// 读取请求体
 	var body io.Reader
 	if c.Request.Body != nil {
-		bodyBytes, err := io.ReadAll(c.Request.Body)
-		if err != nil {
-			logger.Error("failed to read request body", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to read request body"})
-			return
-		}
+		bodyBytes, _ := io.ReadAll(c.Request.Body)
 		body = bytes.NewReader(bodyBytes)
 	}
 
 	// 创建代理请求
-	req, err := http.NewRequest(c.Request.Method, targetURL, body)
-	if err != nil {
-		logger.Error("failed to create proxy request", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create proxy request"})
-		return
-	}
+	req, _ := http.NewRequest(c.Request.Method, targetURL, body)
 
 	// 复制请求头
 	for key, values := range c.Request.Header {
@@ -184,13 +127,9 @@ func proxyToService(c *gin.Context, targetAddr, pathPrefix string) {
 		}
 	}
 
-	// 设置目标主机
-	req.Host = c.Request.Host
-
 	// 发送请求
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error("failed to proxy request", err)
 		c.JSON(http.StatusBadGateway, gin.H{"error": "failed to proxy request"})
 		return
 	}
@@ -203,15 +142,7 @@ func proxyToService(c *gin.Context, targetAddr, pathPrefix string) {
 		}
 	}
 
-	// 设置状态码
+	// 复制响应
 	c.Status(resp.StatusCode)
-
-	// 复制响应体
-	_, err = io.Copy(c.Writer, resp.Body)
-	if err != nil {
-		logger.Error("failed to copy response body", err)
-		return
-	}
-
-	logger.Info("proxy request completed", "target", targetURL, "status", resp.StatusCode)
+	io.Copy(c.Writer, resp.Body)
 }

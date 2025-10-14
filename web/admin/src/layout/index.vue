@@ -89,12 +89,8 @@
         </div>
         
         <div class="header-right">
-          <!-- 通知 -->
-          <el-badge :value="12" class="notification-badge">
-            <el-button type="text" @click="showNotifications">
-              <el-icon><Bell /></el-icon>
-            </el-button>
-          </el-badge>
+          <!-- 实时通知中心 -->
+          <NotificationCenter />
           
           <!-- 用户信息 -->
           <el-dropdown @command="handleUserCommand">
@@ -130,10 +126,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout } from '@/api/auth'
+import NotificationCenter from '@/components/NotificationCenter.vue'
 import {
   House,
   User,
@@ -143,7 +140,6 @@ import {
   Setting,
   Fold,
   Expand,
-  Bell,
   ArrowDown,
   SwitchButton
 } from '@element-plus/icons-vue'
@@ -180,10 +176,22 @@ const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
 }
 
-// 显示通知
-const showNotifications = () => {
-  ElMessage.info('暂无新通知')
-}
+// 加载用户信息
+onMounted(() => {
+  const savedUserInfo = localStorage.getItem('admin_user_info')
+  if (savedUserInfo) {
+    try {
+      const parsed = JSON.parse(savedUserInfo)
+      userInfo.value = {
+        name: parsed.name || parsed.username || '管理员',
+        avatar: parsed.avatar || '',
+        role: parsed.roles?.[0]?.name || '管理员'
+      }
+    } catch (e) {
+      console.error('加载用户信息失败:', e)
+    }
+  }
+})
 
 // 处理用户下拉菜单命令
 const handleUserCommand = (command: string) => {

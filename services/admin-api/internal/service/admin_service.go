@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"goweb/pkg/config"
 	"goweb/pkg/logger"
+	"goweb/pkg/notification"
 	pkgRedis "goweb/pkg/redis"
+	"goweb/pkg/websocket"
 	"goweb/services/admin-api/internal/model"
 	"goweb/services/admin-api/internal/repository"
 	"time"
@@ -18,26 +20,33 @@ import (
 
 // AdminService 管理后台服务
 type AdminService struct {
-	userRepo       *repository.UserRepository
-	roleRepo       *repository.RoleRepository
-	menuRepo       *repository.MenuRepository
-	permissionRepo *repository.PermissionRepository
-	logRepo        *repository.OperationLogRepository
-	redisClient    *pkgRedis.Client
-	logger         logger.Logger
-	config         *config.Config
+	userRepo           *repository.UserRepository
+	roleRepo           *repository.RoleRepository
+	menuRepo           *repository.MenuRepository
+	permissionRepo     *repository.PermissionRepository
+	logRepo            *repository.OperationLogRepository
+	redisClient        *pkgRedis.Client
+	logger             logger.Logger
+	config             *config.Config
+	notificationClient *notification.Client
 }
 
 // NewAdminService 创建管理后台服务实例
 func NewAdminService(db *gorm.DB, cfg *config.Config, redisClient *pkgRedis.Client) *AdminService {
+	var notifyClient *notification.Client
+	if redisClient != nil {
+		notifyClient = notification.NewClient(redisClient)
+	}
+	
 	return &AdminService{
-		userRepo:       repository.NewUserRepository(db),
-		roleRepo:       repository.NewRoleRepository(db),
-		menuRepo:       repository.NewMenuRepository(db),
-		permissionRepo: repository.NewPermissionRepository(db),
-		logRepo:        repository.NewOperationLogRepository(db),
-		redisClient:    redisClient,
-		config:         cfg,
+		userRepo:           repository.NewUserRepository(db),
+		roleRepo:           repository.NewRoleRepository(db),
+		menuRepo:           repository.NewMenuRepository(db),
+		permissionRepo:     repository.NewPermissionRepository(db),
+		logRepo:            repository.NewOperationLogRepository(db),
+		redisClient:        redisClient,
+		config:             cfg,
+		notificationClient: notifyClient,
 	}
 }
 
@@ -133,6 +142,36 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 	}
 
 	s.logger.Info("user login success", "user_id", user.ID, "username", user.Username, "ip", loginIP)
+
+	// 发送登录通知到 WebSocket（异步，延迟1秒等待前端建立连接）
+	if s.notificationClient != nil {
+		s.logger.Info("notification client is available, will send login notification after 1s")
+		go func() {
+			// 延迟1秒，等待前端建立 WebSocket 连接
+			time.Sleep(time.Second)
+			
+			ctx := context.Background()
+			loginTime := time.Now().Format("2006-01-02 15:04:05")
+			
+			notification := &websocket.NotificationMessage{
+				Title: "用户登录提醒",
+				Body:  fmt.Sprintf("%s 于 %s 登录了系统", user.Username, loginTime),
+				Icon:  "User",
+				Link:  "/system/users",
+			}
+			
+			s.logger.Info("sending login notification", "username", user.Username, "notification", notification)
+			
+			// 广播给所有在线管理员
+			if err := s.notificationClient.BroadcastNotification(ctx, notification); err != nil {
+				s.logger.Error("failed to send login notification", err)
+			} else {
+				s.logger.Info("login notification sent successfully", "username", user.Username)
+			}
+		}()
+	} else {
+		s.logger.Warn("notification client is nil, cannot send login notification")
+	}
 
 	return &model.AdminUserLoginResponse{
 		Token:       token,
