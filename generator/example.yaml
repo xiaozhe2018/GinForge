@@ -1,0 +1,249 @@
+# GinForge CRUD 生成器配置文件示例
+# 这是一个文章管理模块的完整配置示例
+
+# ========== 基础配置 ==========
+table: articles             # 数据库表名
+module: admin              # 模块名称（admin/user/file）
+model_name: Article        # 模型名称（PascalCase）
+resource_name: articles    # 资源名称（复数形式，用于 URL）
+
+# ========== 字段配置 ==========
+fields:
+  # 主键
+  - name: id
+    type: bigint unsigned
+    go_type: uint64
+    ts_type: number
+    nullable: false
+    is_primary_key: true
+    auto_increment: true
+    comment: "文章ID"
+    validations: []
+    label: "ID"
+    form_type: input
+    list_visible: true
+    form_visible: false
+    searchable: false
+    sortable: true
+
+  # 标题
+  - name: title
+    type: varchar(255)
+    go_type: string
+    ts_type: string
+    nullable: false
+    is_primary_key: false
+    auto_increment: false
+    comment: "文章标题"
+    validations:
+      - required
+      - max:255
+    label: "标题"
+    form_type: input
+    list_visible: true
+    form_visible: true
+    searchable: true
+    sortable: true
+
+  # 内容
+  - name: content
+    type: text
+    go_type: string
+    ts_type: string
+    nullable: false
+    is_primary_key: false
+    auto_increment: false
+    comment: "文章内容"
+    validations:
+      - required
+    label: "内容"
+    form_type: editor       # 富文本编辑器
+    list_visible: false     # 列表中不显示
+    form_visible: true
+    searchable: true
+    sortable: false
+
+  # 作者ID
+  - name: author_id
+    type: bigint unsigned
+    go_type: uint64
+    ts_type: number
+    nullable: false
+    is_primary_key: false
+    auto_increment: false
+    comment: "作者ID"
+    validations:
+      - required
+    label: "作者"
+    form_type: select       # 下拉选择
+    list_visible: true
+    form_visible: true
+    searchable: false
+    sortable: true
+
+  # 分类ID
+  - name: category_id
+    type: bigint unsigned
+    go_type: "*uint64"
+    ts_type: number
+    nullable: true
+    is_primary_key: false
+    auto_increment: false
+    comment: "分类ID"
+    validations: []
+    label: "分类"
+    form_type: select
+    list_visible: true
+    form_visible: true
+    searchable: false
+    sortable: true
+
+  # 状态
+  - name: status
+    type: tinyint
+    go_type: int8
+    ts_type: number
+    nullable: false
+    is_primary_key: false
+    auto_increment: false
+    default_value: "0"
+    comment: "状态:0草稿,1已发布,2已下线"
+    validations:
+      - required
+    label: "状态"
+    form_type: select
+    list_visible: true
+    form_visible: true
+    searchable: false
+    sortable: true
+
+  # 是否置顶
+  - name: is_top
+    type: tinyint(1)
+    go_type: bool
+    ts_type: boolean
+    nullable: false
+    is_primary_key: false
+    auto_increment: false
+    default_value: "0"
+    comment: "是否置顶"
+    validations: []
+    label: "置顶"
+    form_type: switch       # 开关
+    list_visible: true
+    form_visible: true
+    searchable: false
+    sortable: true
+
+  # 浏览次数
+  - name: view_count
+    type: int unsigned
+    go_type: uint
+    ts_type: number
+    nullable: false
+    is_primary_key: false
+    auto_increment: false
+    default_value: "0"
+    comment: "浏览次数"
+    validations: []
+    label: "浏览次数"
+    form_type: number
+    list_visible: true
+    form_visible: false     # 表单中不显示
+    searchable: false
+    sortable: true
+
+  # 发布时间
+  - name: published_at
+    type: datetime
+    go_type: "*time.Time"
+    ts_type: string
+    nullable: true
+    is_primary_key: false
+    auto_increment: false
+    comment: "发布时间"
+    validations: []
+    label: "发布时间"
+    form_type: datetime
+    list_visible: true
+    form_visible: true
+    searchable: false
+    sortable: true
+
+  # 创建时间
+  - name: created_at
+    type: datetime
+    go_type: "*time.Time"
+    ts_type: string
+    nullable: true
+    is_primary_key: false
+    auto_increment: false
+    comment: "创建时间"
+    validations: []
+    label: "创建时间"
+    form_type: datetime
+    list_visible: true
+    form_visible: false
+    searchable: false
+    sortable: true
+
+  # 更新时间
+  - name: updated_at
+    type: datetime
+    go_type: "*time.Time"
+    ts_type: string
+    nullable: true
+    is_primary_key: false
+    auto_increment: false
+    comment: "更新时间"
+    validations: []
+    label: "更新时间"
+    form_type: datetime
+    list_visible: false     # 列表中不显示
+    form_visible: false
+    searchable: false
+    sortable: true
+
+  # 删除时间（软删除）
+  - name: deleted_at
+    type: datetime
+    go_type: "*time.Time"
+    ts_type: string
+    nullable: true
+    is_primary_key: false
+    auto_increment: false
+    comment: "删除时间"
+    validations: []
+    label: "删除时间"
+    form_type: datetime
+    list_visible: false
+    form_visible: false
+    searchable: false
+    sortable: false
+
+# ========== 功能特性 ==========
+features:
+  soft_delete: true       # 启用软删除
+  timestamps: true        # 启用时间戳
+  pagination: true        # 启用分页
+  search: true           # 启用搜索
+  sort: true             # 启用排序
+  export: false          # 暂不支持导出
+  import: false          # 暂不支持导入
+  batch_delete: false    # 暂不支持批量删除
+
+# ========== 前端配置 ==========
+frontend:
+  title: "文章管理"       # 页面标题
+  icon: "Document"        # 菜单图标（Element Plus Icon）
+  show_in_menu: true     # 是否显示在菜单
+  menu_parent: ""        # 父菜单（可选）
+
+# ========== 生成选项 ==========
+options:
+  output_dir: "."        # 输出目录
+  with_frontend: true    # 生成前端代码
+  force: false           # 是否强制覆盖
+  dry_run: false         # 是否预览模式
+  verbose: false         # 是否详细输出
+
