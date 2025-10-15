@@ -102,6 +102,13 @@ const routes: RouteRecordRaw[] = [
         name: 'Profile',
         component: () => import('@/views/Profile.vue'),
         meta: { title: '个人设置', requiresAuth: true }
+      },
+      // 文档中心
+      {
+        path: 'docs',
+        name: 'Documentation',
+        component: () => import('@/views/Documentation/index.vue'),
+        meta: { title: '文档中心', requiresAuth: true }
       }
     ]
   }

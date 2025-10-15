@@ -18,7 +18,19 @@ export default defineConfig({
     Components({
       resolvers: [ElementPlusResolver()],
       dts: true
-    })
+    }),
+    // 支持 Markdown 文件导入
+    {
+      name: 'markdown-loader',
+      transform(code, id) {
+        if (id.endsWith('.md')) {
+          return {
+            code: `export default ${JSON.stringify(code)}`,
+            map: null
+          }
+        }
+      }
+    }
   ],
   resolve: {
     alias: {

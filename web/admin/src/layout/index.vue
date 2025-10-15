@@ -49,6 +49,12 @@
           <el-icon><Setting /></el-icon>
           <span>系统管理</span>
         </el-menu-item>
+        
+        <!-- 文档中心 -->
+        <el-menu-item index="/dashboard/docs">
+          <el-icon><Reading /></el-icon>
+          <span>文档中心</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -126,6 +132,7 @@ import {
   Menu,
   Lock,
   Setting,
+  Reading,
   Fold,
   Expand,
   ArrowDown,
