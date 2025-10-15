@@ -30,7 +30,11 @@ import (
 	"time"
 
 	"goweb/pkg/config"
+	"goweb/pkg/db"
 	"goweb/pkg/logger"
+	"goweb/pkg/notification"
+	"goweb/pkg/redis"
+	"goweb/services/admin-api/internal/model"
 	"goweb/services/admin-api/internal/router"
 )
 
@@ -40,8 +44,54 @@ func main() {
 	serviceName := "admin-api"
 	log := logger.New(serviceName, cfg.GetString("log.level"))
 
+	log.Info("starting admin-api service")
+
+	// 初始化数据库
+	database, err := db.New(cfg)
+	if err != nil {
+		log.Fatal("failed to initialize database", err)
+	}
+
+	// 自动迁移数据库表
+	if err := database.AutoMigrate(
+		&model.AdminUser{},
+		&model.AdminRole{},
+		&model.AdminPermission{},
+		&model.AdminMenu{},
+		&model.AdminUserRole{},
+		&model.AdminRolePermission{},
+		&model.AdminRoleMenu{},
+		&model.AdminOperationLog{},
+		&model.AdminSystemConfig{},
+	); err != nil {
+		log.Warn("failed to auto migrate database", "error", err)
+	}
+
+	// 初始化 Redis 客户端
+	var redisClient *redis.Client
+	redisConfig := cfg.GetRedisConfig()
+	if redisConfig.Enabled {
+		redisClient = redis.NewClient(&redisConfig, log)
+		log.Info("redis client initialized successfully")
+	}
+
+	// 初始化通知服务
+	var notifyService *notification.Service
+	// 创建通知配置
+	notificationConfig := &notification.Config{
+		Email: nil, // 可以从配置文件加载
+		SMS:   nil, // 可以从配置文件加载
+	}
+	
+	notifyService, err = notification.NewServiceFromConfig(notificationConfig, log)
+	if err != nil {
+		log.Warn("failed to initialize notification service", "error", err)
+	} else {
+		log.Info("notification service initialized successfully")
+	}
+
 	// 初始化路由
-	r := router.NewRouter(cfg, log)
+	r := router.NewRouter(database, redisClient, notifyService, log, cfg)
 
 	// 启动HTTP服务
 	srv := &http.Server{

@@ -1,0 +1,387 @@
+package service
+
+import (
+	"context"
+	"fmt"
+	"goweb/pkg/logger"
+	"goweb/pkg/notification"
+	"goweb/pkg/redis"
+	"goweb/services/admin-api/internal/model"
+	"os"
+	"runtime"
+	"time"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/net"
+	"gorm.io/gorm"
+)
+
+// AdminSystemService 系统管理服务
+type AdminSystemService struct {
+	db            *gorm.DB
+	redisClient   *redis.Client
+	notifyService *notification.Service
+	logger        logger.Logger
+	startTime     time.Time
+	version       string
+	environment   string
+}
+
+// NewAdminSystemService 创建系统管理服务
+func NewAdminSystemService(db *gorm.DB, redisClient *redis.Client, notifyService *notification.Service, log logger.Logger) *AdminSystemService {
+	// 获取环境变量
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	return &AdminSystemService{
+		db:            db,
+		redisClient:   redisClient,
+		notifyService: notifyService,
+		logger:        log,
+		startTime:     time.Now(),
+		version:       "1.0.0", // 可从配置或构建信息中获取
+		environment:   env,
+	}
+}
+
+// GetOnlineUserCount 获取在线用户数
+func (s *AdminSystemService) GetOnlineUserCount() int {
+	// 从Redis获取在线用户数
+	if s.redisClient != nil && s.redisClient.IsEnabled() {
+		count, err := s.redisClient.SCard(context.Background(), "online_users").Result()
+		if err == nil {
+			return int(count)
+		}
+	}
+	return 0
+}
+
+// GetCPUUsage 获取CPU使用率
+func (s *AdminSystemService) GetCPUUsage() int {
+	percent, err := cpu.Percent(time.Second, false)
+	if err != nil || len(percent) == 0 {
+		s.logger.Error("Failed to get CPU usage", "error", err)
+		return 0
+	}
+	return int(percent[0])
+}
+
+// GetMemoryUsage 获取内存使用率
+func (s *AdminSystemService) GetMemoryUsage() int {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		s.logger.Error("Failed to get memory usage", "error", err)
+		return 0
+	}
+	return int(v.UsedPercent)
+}
+
+// GetDiskUsage 获取磁盘使用率
+func (s *AdminSystemService) GetDiskUsage() int {
+	path := "/"
+	if runtime.GOOS == "windows" {
+		path = "C:"
+	}
+
+	usage, err := disk.Usage(path)
+	if err != nil {
+		s.logger.Error("Failed to get disk usage", "error", err)
+		return 0
+	}
+	return int(usage.UsedPercent)
+}
+
+// GetNetworkIn 获取网络入流量
+func (s *AdminSystemService) GetNetworkIn() int64 {
+	stats, err := net.IOCounters(false)
+	if err != nil || len(stats) == 0 {
+		s.logger.Error("Failed to get network stats", "error", err)
+		return 0
+	}
+	return int64(stats[0].BytesRecv)
+}
+
+// GetNetworkOut 获取网络出流量
+func (s *AdminSystemService) GetNetworkOut() int64 {
+	stats, err := net.IOCounters(false)
+	if err != nil || len(stats) == 0 {
+		s.logger.Error("Failed to get network stats", "error", err)
+		return 0
+	}
+	return int64(stats[0].BytesSent)
+}
+
+// GetUptime 获取系统运行时间
+func (s *AdminSystemService) GetUptime() string {
+	uptime := time.Since(s.startTime)
+	days := int(uptime.Hours() / 24)
+	hours := int(uptime.Hours()) % 24
+	minutes := int(uptime.Minutes()) % 60
+
+	if days > 0 {
+		return fmt.Sprintf("%d天%d小时%d分钟", days, hours, minutes)
+	}
+	return fmt.Sprintf("%d小时%d分钟", hours, minutes)
+}
+
+// GetVersion 获取系统版本
+func (s *AdminSystemService) GetVersion() string {
+	return s.version
+}
+
+// GetEnvironment 获取系统环境
+func (s *AdminSystemService) GetEnvironment() string {
+	return s.environment
+}
+
+// GetConfigList 获取配置列表
+func (s *AdminSystemService) GetConfigList(ctx context.Context, req model.AdminSystemConfigListRequest) ([]model.AdminSystemConfig, int64, error) {
+	var configs []model.AdminSystemConfig
+	var total int64
+
+	query := s.db.Model(&model.AdminSystemConfig{})
+
+	// 应用过滤条件
+	if req.Group != "" {
+		query = query.Where("`group` = ?", req.Group)
+	}
+	if req.Keyword != "" {
+		query = query.Where("`key` LIKE ? OR description LIKE ?", "%"+req.Keyword+"%", "%"+req.Keyword+"%")
+	}
+
+	// 计算总数
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 分页查询
+	offset := (req.Page - 1) * req.PageSize
+	if err := query.Order("`group`, sort, id").Offset(offset).Limit(req.PageSize).Find(&configs).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return configs, total, nil
+}
+
+// GetConfig 获取单个配置
+func (s *AdminSystemService) GetConfig(ctx context.Context, key string) (model.AdminSystemConfig, error) {
+	var config model.AdminSystemConfig
+	if err := s.db.Where("`key` = ?", key).First(&config).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return config, nil
+		}
+		return config, err
+	}
+	return config, nil
+}
+
+// GetConfigValue 获取配置值
+func (s *AdminSystemService) GetConfigValue(ctx context.Context, key string) (string, error) {
+	var config model.AdminSystemConfig
+	if err := s.db.Where("`key` = ?", key).First(&config).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", nil
+		}
+		return "", err
+	}
+	if config.Value == nil {
+		return "", nil
+	}
+	return *config.Value, nil
+}
+
+// UpdateConfig 更新配置
+func (s *AdminSystemService) UpdateConfig(ctx context.Context, key string, value string) error {
+	var config model.AdminSystemConfig
+	result := s.db.Where("`key` = ?", key).First(&config)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			// 如果配置不存在，创建新配置
+			description := "系统配置"
+			config = model.AdminSystemConfig{
+				Key:         key,
+				Value:       &value,
+				Type:        "string",
+				Description: &description,
+				Group:       "default",
+				Sort:        0,
+			}
+			return s.db.Create(&config).Error
+		}
+		return result.Error
+	}
+
+	// 更新配置值
+	config.Value = &value
+	return s.db.Save(&config).Error
+}
+
+// SendTestEmail 发送测试邮件
+func (s *AdminSystemService) SendTestEmail(ctx context.Context, to string) error {
+	if s.notifyService == nil {
+		return fmt.Errorf("notification service not configured")
+	}
+
+	// 创建测试邮件请求
+	req := &notification.NotificationRequest{
+		Type:       notification.TypeEmail,
+		Recipients: []string{to},
+		Subject:    "GinForge 测试邮件",
+		Template:   "notification",
+		Data: map[string]interface{}{
+			"Title":   "邮件服务测试",
+			"Name":    "管理员",
+			"Message": "这是一封测试邮件，如果您收到这封邮件，说明您的邮件服务配置正确。",
+			"Level":   "info",
+			"Year":    time.Now().Format("2006"),
+		},
+	}
+
+	// 发送邮件
+	_, err := s.notifyService.Send(ctx, req)
+	return err
+}
+
+// TestCacheConnection 测试缓存连接
+func (s *AdminSystemService) TestCacheConnection(ctx context.Context) error {
+	if s.redisClient == nil || !s.redisClient.IsEnabled() {
+		return fmt.Errorf("redis client not configured")
+	}
+
+	// 测试Redis连接
+	_, err := s.redisClient.Ping(ctx).Result()
+	return err
+}
+
+// ClearCache 清空缓存
+func (s *AdminSystemService) ClearCache(ctx context.Context) error {
+	if s.redisClient == nil || !s.redisClient.IsEnabled() {
+		return fmt.Errorf("redis client not configured")
+	}
+
+	// 清空所有缓存
+	return s.redisClient.FlushDB(ctx).Err()
+}
+
+// GetLogList 获取日志列表
+func (s *AdminSystemService) GetLogList(ctx context.Context, req model.AdminOperationLogListRequest) ([]model.AdminOperationLog, int64, error) {
+	var logs []model.AdminOperationLog
+	var total int64
+
+	query := s.db.Model(&model.AdminOperationLog{})
+
+	// 应用过滤条件
+	if req.UserID != nil {
+		query = query.Where("user_id = ?", *req.UserID)
+	}
+	if req.Username != "" {
+		query = query.Where("username LIKE ?", "%"+req.Username+"%")
+	}
+	if req.Method != "" {
+		query = query.Where("method = ?", req.Method)
+	}
+	if req.Path != "" {
+		query = query.Where("path LIKE ?", "%"+req.Path+"%")
+	}
+	if req.IP != "" {
+		query = query.Where("ip = ?", req.IP)
+	}
+	if req.StatusCode != nil {
+		query = query.Where("status_code = ?", *req.StatusCode)
+	}
+	if req.StartTime != "" {
+		query = query.Where("created_at >= ?", req.StartTime)
+	}
+	if req.EndTime != "" {
+		query = query.Where("created_at <= ?", req.EndTime)
+	}
+
+	// 计算总数
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 分页查询
+	offset := (req.Page - 1) * req.PageSize
+	if err := query.Order("id DESC").Offset(offset).Limit(req.PageSize).Find(&logs).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return logs, total, nil
+}
+
+// ClearLogs 清空日志
+func (s *AdminSystemService) ClearLogs(ctx context.Context) error {
+	return s.db.Exec("DELETE FROM admin_operation_logs").Error
+}
+
+// CheckHealth 健康检查
+func (s *AdminSystemService) CheckHealth(ctx context.Context) map[string]interface{} {
+	health := map[string]interface{}{
+		"status":    "healthy",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"services":  make(map[string]interface{}),
+	}
+
+	services := health["services"].(map[string]interface{})
+
+	// 检查数据库
+	dbStatus := "healthy"
+	dbMessage := "Database connection is healthy"
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		dbStatus = "unhealthy"
+		dbMessage = "Failed to get database connection: " + err.Error()
+		health["status"] = "unhealthy"
+	} else if err := sqlDB.Ping(); err != nil {
+		dbStatus = "unhealthy"
+		dbMessage = "Database ping failed: " + err.Error()
+		health["status"] = "unhealthy"
+	}
+	services["database"] = map[string]string{
+		"status":  dbStatus,
+		"message": dbMessage,
+	}
+
+	// 检查Redis
+	redisStatus := "healthy"
+	redisMessage := "Redis connection is healthy"
+	if s.redisClient == nil || !s.redisClient.IsEnabled() {
+		redisStatus = "unknown"
+		redisMessage = "Redis client not configured"
+	} else if _, err := s.redisClient.Ping(ctx).Result(); err != nil {
+		redisStatus = "unhealthy"
+		redisMessage = "Redis ping failed: " + err.Error()
+		health["status"] = "unhealthy"
+	}
+	services["redis"] = map[string]string{
+		"status":  redisStatus,
+		"message": redisMessage,
+	}
+
+	// 检查磁盘空间
+	diskStatus := "healthy"
+	diskMessage := "Disk space is sufficient"
+	path := "/"
+	if runtime.GOOS == "windows" {
+		path = "C:"
+	}
+	usage, err := disk.Usage(path)
+	if err != nil {
+		diskStatus = "unknown"
+		diskMessage = "Failed to check disk usage: " + err.Error()
+	} else if usage.UsedPercent > 90 {
+		diskStatus = "warning"
+		diskMessage = fmt.Sprintf("Disk usage is high: %.2f%%", usage.UsedPercent)
+	}
+	services["disk"] = map[string]string{
+		"status":  diskStatus,
+		"message": diskMessage,
+	}
+
+	return health
+}

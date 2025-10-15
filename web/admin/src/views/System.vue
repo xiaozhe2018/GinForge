@@ -70,16 +70,16 @@
       <template #header>
         <div class="card-header">
           <span>系统配置</span>
-          <el-button type="primary" size="small" @click="handleSaveConfig">
+          <el-button type="primary" size="small" @click="handleSaveConfig" :loading="saveConfigLoading">
             保存配置
           </el-button>
         </div>
       </template>
       
-      <el-tabs v-model="activeTab" type="border-card">
+      <el-tabs v-model="activeTab" type="border-card" @tab-click="handleTabClick">
         <!-- 基本配置 -->
         <el-tab-pane label="基本配置" name="basic">
-          <el-form :model="basicConfig" label-width="120px" style="max-width: 600px;">
+          <el-form :model="basicConfig" label-width="120px" style="max-width: 600px;" v-loading="configLoading">
             <el-form-item label="系统名称">
               <el-input v-model="basicConfig.systemName" />
             </el-form-item>
@@ -107,7 +107,7 @@
         
         <!-- 安全配置 -->
         <el-tab-pane label="安全配置" name="security">
-          <el-form :model="securityConfig" label-width="120px" style="max-width: 600px;">
+          <el-form :model="securityConfig" label-width="120px" style="max-width: 600px;" v-loading="configLoading">
             <el-form-item label="密码最小长度">
               <el-input-number v-model="securityConfig.minPasswordLength" :min="6" :max="20" />
             </el-form-item>
@@ -133,7 +133,7 @@
         
         <!-- 邮件配置 -->
         <el-tab-pane label="邮件配置" name="email">
-          <el-form :model="emailConfig" label-width="120px" style="max-width: 600px;">
+          <el-form :model="emailConfig" label-width="120px" style="max-width: 600px;" v-loading="configLoading">
             <el-form-item label="SMTP服务器">
               <el-input v-model="emailConfig.smtpHost" />
             </el-form-item>
@@ -150,14 +150,14 @@
               <el-switch v-model="emailConfig.enableSSL" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="testEmail">测试邮件发送</el-button>
+              <el-button type="primary" @click="testEmail" :loading="testEmailLoading">测试邮件发送</el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
         
         <!-- 缓存配置 -->
         <el-tab-pane label="缓存配置" name="cache">
-          <el-form :model="cacheConfig" label-width="120px" style="max-width: 600px;">
+          <el-form :model="cacheConfig" label-width="120px" style="max-width: 600px;" v-loading="configLoading">
             <el-form-item label="缓存类型">
               <el-select v-model="cacheConfig.cacheType" style="width: 200px;">
                 <el-option label="Redis" value="redis" />
@@ -177,8 +177,8 @@
               <el-input-number v-model="cacheConfig.defaultExpiration" :min="60" :max="86400" />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="testCache">测试缓存连接</el-button>
-              <el-button type="danger" @click="clearCache">清空缓存</el-button>
+              <el-button type="primary" @click="testCache" :loading="testCacheLoading">测试缓存连接</el-button>
+              <el-button type="danger" @click="clearCache" :loading="clearCacheLoading">清空缓存</el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -198,10 +198,10 @@
               <el-option label="信息" value="info" />
               <el-option label="调试" value="debug" />
             </el-select>
-            <el-button type="primary" size="small" @click="fetchLogs">
+            <el-button type="primary" size="small" @click="fetchLogs" :loading="logLoading">
               刷新
             </el-button>
-            <el-button type="danger" size="small" @click="clearLogs">
+            <el-button type="danger" size="small" @click="clearLogs" :loading="clearLogsLoading">
               清空日志
             </el-button>
           </div>
@@ -211,18 +211,26 @@
       <el-table :data="logList" v-loading="logLoading" max-height="400">
         <el-table-column prop="timestamp" label="时间" width="160">
           <template #default="{ row }">
-            {{ formatDate(row.timestamp) }}
+            {{ formatDate(row.created_at || row.timestamp) }}
           </template>
         </el-table-column>
         <el-table-column prop="level" label="级别" width="80">
           <template #default="{ row }">
-            <el-tag :type="getLogLevelType(row.level)">
-              {{ row.level.toUpperCase() }}
+            <el-tag :type="getLogLevelType(row.level || getLogLevelFromStatusCode(row.status_code))">
+              {{ (row.level || getLogLevelFromStatusCode(row.status_code)).toUpperCase() }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="message" label="消息" min-width="300" />
-        <el-table-column prop="source" label="来源" width="120" />
+        <el-table-column prop="message" label="消息" min-width="300">
+          <template #default="{ row }">
+            {{ row.message || `${row.method} ${row.path}` }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="source" label="来源" width="120">
+          <template #default="{ row }">
+            {{ row.source || row.username || '系统' }}
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
   </div>
@@ -232,9 +240,19 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Monitor, Coin, Warning } from '@element-plus/icons-vue'
+import * as systemApi from '@/api/system'
 
 // 当前激活的标签页
 const activeTab = ref('basic')
+
+// 加载状态
+const configLoading = ref(false)
+const saveConfigLoading = ref(false)
+const testEmailLoading = ref(false)
+const testCacheLoading = ref(false)
+const clearCacheLoading = ref(false)
+const logLoading = ref(false)
+const clearLogsLoading = ref(false)
 
 // 系统信息
 const systemInfo = reactive({
@@ -283,60 +301,203 @@ const cacheConfig = reactive({
 // 日志相关
 const logLevel = ref('')
 const logList = ref<any[]>([])
-const logLoading = ref(false)
+
+// 配置键映射
+const configKeyMap = {
+  basic: {
+    systemName: 'system.name',
+    systemVersion: 'system.version',
+    systemDescription: 'system.description',
+    systemLogo: 'system.logo',
+    defaultLanguage: 'system.default_language'
+  },
+  security: {
+    minPasswordLength: 'security.min_password_length',
+    passwordComplexity: 'security.password_complexity',
+    maxLoginAttempts: 'security.max_login_attempts',
+    lockoutDuration: 'security.lockout_duration',
+    sessionTimeout: 'security.session_timeout'
+  },
+  email: {
+    smtpHost: 'email.smtp_host',
+    smtpPort: 'email.smtp_port',
+    fromEmail: 'email.from_email',
+    emailPassword: 'email.email_password',
+    enableSSL: 'email.enable_ssl'
+  },
+  cache: {
+    cacheType: 'cache.type',
+    redisHost: 'cache.redis_host',
+    redisPort: 'cache.redis_port',
+    redisPassword: 'cache.redis_password',
+    defaultExpiration: 'cache.default_expiration'
+  }
+}
 
 // 获取系统信息
 const fetchSystemInfo = async () => {
   try {
-    // 模拟数据
-    systemInfo.onlineUsers = Math.floor(Math.random() * 100) + 50
-    systemInfo.cpuUsage = Math.floor(Math.random() * 30) + 20
-    systemInfo.memoryUsage = Math.floor(Math.random() * 40) + 30
-    systemInfo.errorCount = Math.floor(Math.random() * 10)
+    const data = await systemApi.getSystemInfo()
+    
+    systemInfo.onlineUsers = data.online_users || 0
+    systemInfo.cpuUsage = data.cpu_usage || 0
+    systemInfo.memoryUsage = data.memory_usage || 0
+    systemInfo.errorCount = 0 // 错误日志数量需要另外获取
   } catch (error) {
+    console.error('获取系统信息失败:', error)
     ElMessage.error('获取系统信息失败')
   }
+}
+
+// 加载配置
+const loadConfigs = async (group: string) => {
+  configLoading.value = true
+  try {
+    const response = await systemApi.getSystemConfigList({ group })
+    const configs = response.list
+    
+    // 根据当前标签页更新配置
+    switch (group) {
+      case 'basic':
+        updateBasicConfig(configs)
+        break
+      case 'security':
+        updateSecurityConfig(configs)
+        break
+      case 'email':
+        updateEmailConfig(configs)
+        break
+      case 'cache':
+        updateCacheConfig(configs)
+        break
+    }
+  } catch (error) {
+    console.error('获取配置失败:', error)
+    ElMessage.error('获取配置失败')
+  } finally {
+    configLoading.value = false
+  }
+}
+
+// 更新基本配置
+const updateBasicConfig = (configs: systemApi.SystemConfig[]) => {
+  configs.forEach(config => {
+    switch (config.key) {
+      case 'system.name':
+        basicConfig.systemName = config.value
+        break
+      case 'system.version':
+        basicConfig.systemVersion = config.value
+        break
+      case 'system.description':
+        basicConfig.systemDescription = config.value
+        break
+      case 'system.logo':
+        basicConfig.systemLogo = config.value
+        break
+      case 'system.default_language':
+        basicConfig.defaultLanguage = config.value
+        break
+    }
+  })
+}
+
+// 更新安全配置
+const updateSecurityConfig = (configs: systemApi.SystemConfig[]) => {
+  configs.forEach(config => {
+    switch (config.key) {
+      case 'security.min_password_length':
+        securityConfig.minPasswordLength = parseInt(config.value)
+        break
+      case 'security.password_complexity':
+        try {
+          securityConfig.passwordComplexity = JSON.parse(config.value)
+        } catch (e) {
+          securityConfig.passwordComplexity = ['lowercase', 'numbers']
+        }
+        break
+      case 'security.max_login_attempts':
+        securityConfig.maxLoginAttempts = parseInt(config.value)
+        break
+      case 'security.lockout_duration':
+        securityConfig.lockoutDuration = parseInt(config.value)
+        break
+      case 'security.session_timeout':
+        securityConfig.sessionTimeout = parseInt(config.value)
+        break
+    }
+  })
+}
+
+// 更新邮件配置
+const updateEmailConfig = (configs: systemApi.SystemConfig[]) => {
+  configs.forEach(config => {
+    switch (config.key) {
+      case 'email.smtp_host':
+        emailConfig.smtpHost = config.value
+        break
+      case 'email.smtp_port':
+        emailConfig.smtpPort = parseInt(config.value)
+        break
+      case 'email.from_email':
+        emailConfig.fromEmail = config.value
+        break
+      case 'email.email_password':
+        emailConfig.emailPassword = config.value
+        break
+      case 'email.enable_ssl':
+        emailConfig.enableSSL = config.value === 'true'
+        break
+    }
+  })
+}
+
+// 更新缓存配置
+const updateCacheConfig = (configs: systemApi.SystemConfig[]) => {
+  configs.forEach(config => {
+    switch (config.key) {
+      case 'cache.type':
+        cacheConfig.cacheType = config.value
+        break
+      case 'cache.redis_host':
+        cacheConfig.redisHost = config.value
+        break
+      case 'cache.redis_port':
+        cacheConfig.redisPort = parseInt(config.value)
+        break
+      case 'cache.redis_password':
+        cacheConfig.redisPassword = config.value
+        break
+      case 'cache.default_expiration':
+        cacheConfig.defaultExpiration = parseInt(config.value)
+        break
+    }
+  })
+}
+
+// 标签页切换
+const handleTabClick = () => {
+  loadConfigs(activeTab.value)
 }
 
 // 获取日志列表
 const fetchLogs = async () => {
   logLoading.value = true
   try {
-    // 模拟日志数据
-    const mockLogs = [
-      {
-        timestamp: new Date().toISOString(),
-        level: 'info',
-        message: '用户 admin 登录成功',
-        source: 'auth'
-      },
-      {
-        timestamp: new Date(Date.now() - 60000).toISOString(),
-        level: 'warn',
-        message: '数据库连接池使用率较高',
-        source: 'database'
-      },
-      {
-        timestamp: new Date(Date.now() - 120000).toISOString(),
-        level: 'error',
-        message: 'Redis 连接失败，正在重试',
-        source: 'cache'
-      },
-      {
-        timestamp: new Date(Date.now() - 180000).toISOString(),
-        level: 'info',
-        message: '系统启动完成',
-        source: 'system'
-      }
-    ]
-    
-    let filteredLogs = mockLogs
-    if (logLevel.value) {
-      filteredLogs = mockLogs.filter(log => log.level === logLevel.value)
+    const params: any = {
+      page: 1,
+      page_size: 50
     }
     
-    logList.value = filteredLogs
+    if (logLevel.value) {
+      // 这里需要根据后端API调整，目前后端没有level字段
+      // params.level = logLevel.value
+    }
+    
+    const response = await systemApi.getSystemLogList(params)
+    logList.value = response.list
   } catch (error) {
+    console.error('获取日志失败:', error)
     ElMessage.error('获取日志失败')
   } finally {
     logLoading.value = false
@@ -345,31 +506,78 @@ const fetchLogs = async () => {
 
 // 保存配置
 const handleSaveConfig = async () => {
+  saveConfigLoading.value = true
   try {
-    // 这里应该调用API保存配置
+    const configMap = configKeyMap[activeTab.value as keyof typeof configKeyMap]
+    const config = activeTab.value === 'basic' ? basicConfig :
+                  activeTab.value === 'security' ? securityConfig :
+                  activeTab.value === 'email' ? emailConfig :
+                  cacheConfig
+    
+    // 保存当前标签页的所有配置
+    const promises = Object.entries(configMap).map(([key, configKey]) => {
+      let value = (config as any)[key]
+      
+      // 特殊处理某些类型
+      if (key === 'passwordComplexity') {
+        value = JSON.stringify(value)
+      } else if (key === 'enableSSL') {
+        value = value.toString()
+      }
+      
+      return systemApi.updateSystemConfig(configKey as string, { value: value.toString() })
+    })
+    
+    await Promise.all(promises)
     ElMessage.success('配置保存成功')
   } catch (error) {
+    console.error('配置保存失败:', error)
     ElMessage.error('配置保存失败')
+  } finally {
+    saveConfigLoading.value = false
   }
 }
 
 // 测试邮件发送
 const testEmail = async () => {
+  // 先保存邮件配置
+  await handleSaveConfig()
+  
+  testEmailLoading.value = true
   try {
-    // 这里应该调用API测试邮件发送
+    const email = await ElMessageBox.prompt('请输入测试邮箱地址', '测试邮件发送', {
+      confirmButtonText: '发送',
+      cancelButtonText: '取消',
+      inputPattern: /[\w!#$%&'*+/=?^_`{|}~-]+(?:\.[\w!#$%&'*+/=?^_`{|}~-]+)*@(?:[\w](?:[\w-]*[\w])?\.)+[\w](?:[\w-]*[\w])?/,
+      inputErrorMessage: '邮箱格式不正确'
+    })
+    
+    await systemApi.testEmailConfig(email.value)
     ElMessage.success('测试邮件发送成功')
-  } catch (error) {
-    ElMessage.error('测试邮件发送失败')
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('测试邮件发送失败:', error)
+      ElMessage.error(error.message || '测试邮件发送失败')
+    }
+  } finally {
+    testEmailLoading.value = false
   }
 }
 
 // 测试缓存连接
 const testCache = async () => {
+  // 先保存缓存配置
+  await handleSaveConfig()
+  
+  testCacheLoading.value = true
   try {
-    // 这里应该调用API测试缓存连接
+    await systemApi.testCacheConnection()
     ElMessage.success('缓存连接测试成功')
   } catch (error) {
+    console.error('缓存连接测试失败:', error)
     ElMessage.error('缓存连接测试失败')
+  } finally {
+    testCacheLoading.value = false
   }
 }
 
@@ -382,12 +590,16 @@ const clearCache = async () => {
       type: 'warning'
     })
     
-    // 这里应该调用API清空缓存
+    clearCacheLoading.value = true
+    await systemApi.clearCache()
     ElMessage.success('缓存清空成功')
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('缓存清空失败:', error)
       ElMessage.error('缓存清空失败')
     }
+  } finally {
+    clearCacheLoading.value = false
   }
 }
 
@@ -400,13 +612,17 @@ const clearLogs = async () => {
       type: 'warning'
     })
     
-    // 这里应该调用API清空日志
+    clearLogsLoading.value = true
+    await systemApi.clearSystemLogs()
     logList.value = []
     ElMessage.success('日志清空成功')
   } catch (error) {
     if (error !== 'cancel') {
+      console.error('日志清空失败:', error)
       ElMessage.error('日志清空失败')
     }
+  } finally {
+    clearLogsLoading.value = false
   }
 }
 
@@ -421,6 +637,13 @@ const getLogLevelType = (level: string) => {
   return typeMap[level] || 'info'
 }
 
+// 根据状态码获取日志级别
+const getLogLevelFromStatusCode = (statusCode: number) => {
+  if (statusCode >= 500) return 'error'
+  if (statusCode >= 400) return 'warn'
+  return 'info'
+}
+
 // 格式化日期
 const formatDate = (date: string) => {
   return new Date(date).toLocaleString('zh-CN')
@@ -429,6 +652,7 @@ const formatDate = (date: string) => {
 // 组件挂载时获取数据
 onMounted(() => {
   fetchSystemInfo()
+  loadConfigs(activeTab.value)
   fetchLogs()
   
   // 定时更新系统信息
@@ -514,6 +738,3 @@ onMounted(() => {
   color: #333;
 }
 </style>
-
-
-

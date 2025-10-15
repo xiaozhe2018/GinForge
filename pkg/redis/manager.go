@@ -48,7 +48,7 @@ func (m *Manager) NewLock(key string, ttl time.Duration) *Lock {
 
 // Ping 测试连接
 func (m *Manager) Ping(ctx context.Context) error {
-	return m.client.Ping(ctx)
+	return m.client.Ping(ctx).Err()
 }
 
 // Close 关闭连接

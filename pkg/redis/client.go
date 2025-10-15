@@ -55,11 +55,11 @@ func (c *Client) GetClient() redis.UniversalClient {
 }
 
 // Ping 测试连接
-func (c *Client) Ping(ctx context.Context) error {
+func (c *Client) Ping(ctx context.Context) *redis.StatusCmd {
 	if c.client == nil {
-		return nil
+		return redis.NewStatusCmd(ctx)
 	}
-	return c.client.Ping(ctx).Err()
+	return c.client.Ping(ctx)
 }
 
 // Close 关闭连接
@@ -109,4 +109,20 @@ func (c *Client) Del(ctx context.Context, keys ...string) error {
 		return fmt.Errorf("redis client is not initialized")
 	}
 	return c.client.Del(ctx, keys...).Err()
+}
+
+// FlushDB 清空当前数据库
+func (c *Client) FlushDB(ctx context.Context) *redis.StatusCmd {
+	if c.client == nil {
+		return redis.NewStatusCmd(ctx)
+	}
+	return c.client.FlushDB(ctx)
+}
+
+// SCard 获取集合的基数(元素数量)
+func (c *Client) SCard(ctx context.Context, key string) *redis.IntCmd {
+	if c.client == nil {
+		return redis.NewIntCmd(ctx)
+	}
+	return c.client.SCard(ctx, key)
 }
