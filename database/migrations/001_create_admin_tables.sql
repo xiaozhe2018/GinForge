@@ -164,7 +164,7 @@ CREATE TABLE IF NOT EXISTS `admin_operation_logs` (
 
 -- 插入默认管理员用户 (密码: admin123)
 INSERT INTO `admin_users` (`username`, `email`, `password`, `name`, `status`) VALUES
-('admin', 'admin@ginforge.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8K5K5K.', '超级管理员', 1);
+('admin', 'admin@ginforge.com', '$2a$10$3Idb4DTJjoxAsyo6SD2NX.oBckKvrRheHS8V13yDl7LWNNvnQIkgG', '超级管理员', 1);
 
 -- 插入默认角色
 INSERT INTO `admin_roles` (`name`, `code`, `description`, `sort`, `status`) VALUES
