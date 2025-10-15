@@ -33,11 +33,11 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	// 初始化服务
 	// 先初始化系统服务，其他服务需要依赖它
 	adminSystemService := service.NewAdminSystemService(db, redisClient, notifyService, log)
-	
+
 	userService := service.NewUserService(db, cfg, redisClient)
 	userService.SetLogger(log)
 	userService.SetSystemService(adminSystemService) // 注入系统服务用于安全配置
-	
+
 	roleService := service.NewRoleService(db, cfg, redisClient)
 	roleService.SetLogger(log)
 	permissionService := service.NewPermissionService(db, cfg, redisClient)
@@ -100,6 +100,7 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.GET("/permissions/:id", adminPermissionHandler.GetPermission)
 	auth.POST("/permissions", adminPermissionHandler.CreatePermission)
 	auth.PUT("/permissions/:id", adminPermissionHandler.UpdatePermission)
+	auth.PUT("/permissions/:id/status", adminPermissionHandler.UpdatePermissionStatus)
 	auth.DELETE("/permissions/:id", adminPermissionHandler.DeletePermission)
 
 	// 菜单相关路由

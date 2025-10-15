@@ -172,11 +172,17 @@ func (s *PermissionService) CreatePermission(req *model.AdminPermissionCreateReq
 	}
 
 	// 创建权限
+	status := req.Status
+	if status == 0 {
+		status = 1 // 默认启用
+	}
+
 	permission := &model.AdminPermission{
 		Name:        req.Name,
 		Code:        req.Code,
 		Type:        req.Type,
 		Description: &req.Description,
+		Status:      status,
 	}
 
 	if err := s.permissionRepo.Create(permission); err != nil {
@@ -210,12 +216,19 @@ func (s *PermissionService) UpdatePermission(id uint64, req *model.AdminPermissi
 	permission.Code = req.Code
 	permission.Type = req.Type
 	permission.Description = &req.Description
+	permission.Status = req.Status
 
 	if err := s.permissionRepo.Update(permission); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// UpdatePermissionStatus 更新权限状态
+func (s *PermissionService) UpdatePermissionStatus(id uint64, status int8) error {
+	// 直接更新状态字段，不加载关联关系
+	return s.permissionRepo.UpdateStatus(id, status)
 }
 
 // GetPermissions 获取权限列表

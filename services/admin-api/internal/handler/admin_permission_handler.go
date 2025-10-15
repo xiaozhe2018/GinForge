@@ -201,3 +201,42 @@ func (h *AdminPermissionHandler) DeletePermission(c *gin.Context) {
 
 	response.Success(c, gin.H{"message": "删除成功"})
 }
+
+// UpdatePermissionStatus 更新权限状态
+// @Summary 更新权限状态
+// @Description 更新权限的启用/禁用状态
+// @Tags 权限管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "权限ID"
+// @Param status query int true "状态：0=禁用，1=启用"
+// @Success 200 {object} response.Response "更新成功"
+// @Failure 400 {object} response.Response "请求参数错误"
+// @Failure 401 {object} response.Response "未授权"
+// @Failure 500 {object} response.Response "服务器内部错误"
+// @Router /admin/permissions/{id}/status [put]
+func (h *AdminPermissionHandler) UpdatePermissionStatus(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的权限ID")
+		return
+	}
+
+	statusStr := c.Query("status")
+	status, err := strconv.ParseInt(statusStr, 10, 8)
+	if err != nil || (status != 0 && status != 1) {
+		response.BadRequest(c, "无效的状态值，必须是0或1")
+		return
+	}
+
+	// 调用服务层更新权限状态
+	if err := h.permissionService.UpdatePermissionStatus(id, int8(status)); err != nil {
+		h.logger.Error("update permission status error", err)
+		response.InternalError(c, "更新权限状态失败")
+		return
+	}
+
+	response.Success(c, gin.H{"message": "状态更新成功"})
+}

@@ -11,13 +11,13 @@ import (
 
 // RedisGroupStore Redis 分组存储
 type RedisGroupStore struct {
-	client *redis.Client
+	client redis.UniversalClient
 	prefix string
 	ttl    time.Duration
 }
 
 // NewRedisGroupStore 创建 Redis 分组存储
-func NewRedisGroupStore(client *redis.Client, prefix string, ttl time.Duration) *RedisGroupStore {
+func NewRedisGroupStore(client redis.UniversalClient, prefix string, ttl time.Duration) *RedisGroupStore {
 	return &RedisGroupStore{
 		client: client,
 		prefix: prefix,
@@ -43,7 +43,7 @@ func (r *RedisGroupStore) clientGroupsKey(clientID string) string {
 // AddClientToGroup 添加客户端到分组
 func (r *RedisGroupStore) AddClientToGroup(ctx context.Context, groupID, clientID string, clientInfo map[string]interface{}) error {
 	pipe := r.client.Pipeline()
-	
+
 	// 将客户端添加到分组
 	clientInfoBytes, err := json.Marshal(clientInfo)
 	if err != nil {
@@ -51,11 +51,11 @@ func (r *RedisGroupStore) AddClientToGroup(ctx context.Context, groupID, clientI
 	}
 	pipe.HSet(ctx, r.groupKey(groupID), clientID, clientInfoBytes)
 	pipe.Expire(ctx, r.groupKey(groupID), r.ttl)
-	
+
 	// 将分组添加到客户端的分组列表
 	pipe.SAdd(ctx, r.clientGroupsKey(clientID), groupID)
 	pipe.Expire(ctx, r.clientGroupsKey(clientID), r.ttl)
-	
+
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -63,21 +63,21 @@ func (r *RedisGroupStore) AddClientToGroup(ctx context.Context, groupID, clientI
 // RemoveClientFromGroup 从分组移除客户端
 func (r *RedisGroupStore) RemoveClientFromGroup(ctx context.Context, groupID, clientID string) error {
 	pipe := r.client.Pipeline()
-	
+
 	// 从分组中移除客户端
 	pipe.HDel(ctx, r.groupKey(groupID), clientID)
-	
+
 	// 从客户端的分组列表中移除分组
 	pipe.SRem(ctx, r.clientGroupsKey(clientID), groupID)
-	
+
 	// 如果分组为空，删除分组元数据
 	pipe.HLen(ctx, r.groupKey(groupID))
-	
+
 	cmds, err := pipe.Exec(ctx)
 	if err != nil {
 		return err
 	}
-	
+
 	// 检查分组是否为空
 	if len(cmds) >= 3 {
 		if hlenCmd, ok := cmds[2].(*redis.IntCmd); ok {
@@ -87,7 +87,7 @@ func (r *RedisGroupStore) RemoveClientFromGroup(ctx context.Context, groupID, cl
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -98,7 +98,7 @@ func (r *RedisGroupStore) GetGroupClients(ctx context.Context, groupID string) (
 	if err != nil {
 		return nil, err
 	}
-	
+
 	result := make(map[string]map[string]interface{})
 	for clientID, clientInfoBytes := range clientsMap {
 		var clientInfo map[string]interface{}
@@ -107,7 +107,7 @@ func (r *RedisGroupStore) GetGroupClients(ctx context.Context, groupID string) (
 		}
 		result[clientID] = clientInfo
 	}
-	
+
 	return result, nil
 }
 
@@ -123,7 +123,7 @@ func (r *RedisGroupStore) SetGroupMetadata(ctx context.Context, groupID string, 
 	if err != nil {
 		return err
 	}
-	
+
 	// 设置分组元数据
 	return r.client.Set(ctx, r.groupMetaKey(groupID), metadataBytes, r.ttl).Err()
 }
@@ -138,12 +138,12 @@ func (r *RedisGroupStore) GetGroupMetadata(ctx context.Context, groupID string) 
 		}
 		return nil, err
 	}
-	
+
 	var metadata map[string]interface{}
 	if err := json.Unmarshal(metadataBytes, &metadata); err != nil {
 		return nil, err
 	}
-	
+
 	return metadata, nil
 }
 
@@ -153,7 +153,7 @@ func (r *RedisGroupStore) GetAllGroups(ctx context.Context) ([]string, error) {
 	var groups []string
 	var cursor uint64
 	pattern := fmt.Sprintf("%s:group:*", r.prefix)
-	
+
 	for {
 		var keys []string
 		var err error
@@ -161,18 +161,18 @@ func (r *RedisGroupStore) GetAllGroups(ctx context.Context) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		for _, key := range keys {
 			// 从键中提取分组 ID
 			groupID := key[len(r.prefix)+7:] // 去掉前缀 "{prefix}:group:"
 			groups = append(groups, groupID)
 		}
-		
+
 		if cursor == 0 {
 			break
 		}
 	}
-	
+
 	return groups, nil
 }
 
@@ -206,18 +206,18 @@ func (r *RedisGroupStore) DeleteGroup(ctx context.Context, groupID string) error
 	if err != nil {
 		return err
 	}
-	
+
 	pipe := r.client.Pipeline()
-	
+
 	// 从每个客户端的分组列表中移除分组
 	for _, clientID := range clientIDs {
 		pipe.SRem(ctx, r.clientGroupsKey(clientID), groupID)
 	}
-	
+
 	// 删除分组和元数据
 	pipe.Del(ctx, r.groupKey(groupID))
 	pipe.Del(ctx, r.groupMetaKey(groupID))
-	
+
 	_, err = pipe.Exec(ctx)
 	return err
 }

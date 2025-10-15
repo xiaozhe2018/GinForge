@@ -105,8 +105,8 @@
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
-              :active-value="'active'"
-              :inactive-value="'disabled'"
+              :active-value="1"
+              :inactive-value="0"
               @change="handleStatusChange(row)"
             />
           </template>
@@ -206,8 +206,8 @@
         
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio label="active">启用</el-radio>
-            <el-radio label="disabled">禁用</el-radio>
+            <el-radio :label="1">启用</el-radio>
+            <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
         
@@ -264,7 +264,7 @@ const form = reactive({
   resource: '',
   method: '',
   sort: 0,
-  status: 'active',
+  status: 1,  // 默认启用
   description: ''
 })
 
@@ -427,12 +427,19 @@ const handleDelete = async (row: any) => {
   }
 }
 
-// 状态变更（权限模块暂不支持状态切换）
+// 状态变更
 const handleStatusChange = async (row: any) => {
-  // 后端权限API暂时没有状态字段，禁用此功能
-  ElMessage.info('权限状态切换功能暂未实现')
-  // 恢复原状态
-  row.status = row.status === 'active' ? 'disabled' : 'active'
+  const oldStatus = row.status === 1 ? 0 : 1 // 记录原状态（因为 v-model 已经改变了）
+  
+  try {
+    await permissionApi.updatePermissionStatus(row.id, row.status)
+    ElMessage.success(`权限已${row.status === 1 ? '启用' : '禁用'}`)
+  } catch (error: any) {
+    console.error('更新权限状态失败:', error)
+    ElMessage.error(error.message || '更新状态失败')
+    // 恢复原状态
+    row.status = oldStatus
+  }
 }
 
 // 展开全部

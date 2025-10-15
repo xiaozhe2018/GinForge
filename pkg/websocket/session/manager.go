@@ -26,7 +26,7 @@ type SessionManager struct {
 // NewSessionManager 创建会话管理器
 func NewSessionManager(store SessionStore) *SessionManager {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	return &SessionManager{
 		store:      store,
 		clientSess: make(map[string]string),
@@ -41,25 +41,25 @@ func NewMemorySessionManager() *SessionManager {
 }
 
 // NewRedisSessionManager 创建Redis会话管理器
-func NewRedisSessionManager(client *redis.Client, prefix string, ttl time.Duration) *SessionManager {
+func NewRedisSessionManager(client redis.UniversalClient, prefix string, ttl time.Duration) *SessionManager {
 	return NewSessionManager(NewRedisSessionStore(client, prefix, ttl))
 }
 
 // CreateSession 创建会话
 func (m *SessionManager) CreateSession(clientID, userID string) (*Session, error) {
 	session := NewSession(clientID, userID)
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	// 保存会话
 	if err := m.store.Save(m.ctx, session); err != nil {
 		return nil, err
 	}
-	
+
 	// 关联客户端与会话
 	m.clientSess[clientID] = session.ID
-	
+
 	return session, nil
 }
 
@@ -68,11 +68,11 @@ func (m *SessionManager) GetSession(clientID string) (*Session, error) {
 	m.mu.RLock()
 	sessionID, ok := m.clientSess[clientID]
 	m.mu.RUnlock()
-	
+
 	if !ok {
 		return nil, ErrClientNotFound
 	}
-	
+
 	return m.store.Get(m.ctx, sessionID)
 }
 
@@ -80,18 +80,18 @@ func (m *SessionManager) GetSession(clientID string) (*Session, error) {
 func (m *SessionManager) RemoveSession(clientID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	sessionID, ok := m.clientSess[clientID]
 	if !ok {
 		return nil // 客户端不存在，视为成功
 	}
-	
+
 	// 删除会话
 	err := m.store.Delete(m.ctx, sessionID)
-	
+
 	// 无论是否成功，都移除客户端关联
 	delete(m.clientSess, clientID)
-	
+
 	return err
 }
 
@@ -106,7 +106,7 @@ func (m *SessionManager) SetSessionData(clientID, key string, value interface{})
 	if err != nil {
 		return err
 	}
-	
+
 	session.Set(key, value)
 	return m.store.Save(m.ctx, session)
 }
@@ -117,12 +117,12 @@ func (m *SessionManager) GetSessionData(clientID, key string) (interface{}, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	value, ok := session.Get(key)
 	if !ok {
 		return nil, ErrKeyNotFound
 	}
-	
+
 	return value, nil
 }
 
@@ -132,7 +132,7 @@ func (m *SessionManager) UpdateSessionData(clientID string, data map[string]inte
 	if err != nil {
 		return err
 	}
-	
+
 	session.Update(data)
 	return m.store.Save(m.ctx, session)
 }
@@ -143,7 +143,7 @@ func (m *SessionManager) DeleteSessionData(clientID, key string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	session.Delete(key)
 	return m.store.Save(m.ctx, session)
 }
@@ -154,7 +154,7 @@ func (m *SessionManager) ClearSessionData(clientID string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	session.Clear()
 	return m.store.Save(m.ctx, session)
 }

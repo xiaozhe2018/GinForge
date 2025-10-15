@@ -7,6 +7,7 @@ export interface Permission {
   code: string
   type: string
   description?: string
+  status: number  // 状态：0=禁用，1=启用
   created_at: string
   updated_at: string
 }
@@ -28,6 +29,7 @@ export interface CreatePermissionParams {
   code: string
   type: string
   description?: string
+  status?: number  // 状态：0=禁用，1=启用
 }
 
 export interface UpdatePermissionParams {
@@ -35,6 +37,7 @@ export interface UpdatePermissionParams {
   code: string
   type: string
   description?: string
+  status?: number  // 状态：0=禁用，1=启用
 }
 
 // 获取权限列表
@@ -60,4 +63,9 @@ export const updatePermission = (id: number, data: UpdatePermissionParams) => {
 // 删除权限
 export const deletePermission = (id: number) => {
   return request.delete(`/api/v1/admin/permissions/${id}`)
+}
+
+// 更新权限状态
+export const updatePermissionStatus = (id: number, status: number) => {
+  return request.put(`/api/v1/admin/permissions/${id}/status?status=${status}`)
 }

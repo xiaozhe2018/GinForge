@@ -156,13 +156,13 @@ func (s *Session) UnmarshalJSON(data []byte) error {
 type SessionStore interface {
 	// Get 获取会话
 	Get(ctx context.Context, id string) (*Session, error)
-	
+
 	// Save 保存会话
 	Save(ctx context.Context, session *Session) error
-	
+
 	// Delete 删除会话
 	Delete(ctx context.Context, id string) error
-	
+
 	// GetByUserID 根据用户ID获取会话
 	GetByUserID(ctx context.Context, userID string) ([]*Session, error)
 }
@@ -260,13 +260,13 @@ func (m *MemorySessionStore) GetByUserID(ctx context.Context, userID string) ([]
 
 // RedisSessionStore Redis会话存储
 type RedisSessionStore struct {
-	client *redis.Client
+	client redis.UniversalClient
 	prefix string
 	ttl    time.Duration
 }
 
 // NewRedisSessionStore 创建Redis会话存储
-func NewRedisSessionStore(client *redis.Client, prefix string, ttl time.Duration) *RedisSessionStore {
+func NewRedisSessionStore(client redis.UniversalClient, prefix string, ttl time.Duration) *RedisSessionStore {
 	return &RedisSessionStore{
 		client: client,
 		prefix: prefix,
@@ -311,16 +311,16 @@ func (r *RedisSessionStore) Save(ctx context.Context, session *Session) error {
 
 	// 使用管道执行多个命令
 	pipe := r.client.Pipeline()
-	
+
 	// 保存会话数据
 	pipe.Set(ctx, r.sessionKey(session.ID), data, r.ttl)
-	
+
 	// 更新用户会话索引
 	if session.UserID != "" {
 		pipe.SAdd(ctx, r.userSessionsKey(session.UserID), session.ID)
 		pipe.Expire(ctx, r.userSessionsKey(session.UserID), r.ttl)
 	}
-	
+
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -338,15 +338,15 @@ func (r *RedisSessionStore) Delete(ctx context.Context, id string) error {
 
 	// 使用管道执行多个命令
 	pipe := r.client.Pipeline()
-	
+
 	// 删除会话
 	pipe.Del(ctx, r.sessionKey(id))
-	
+
 	// 从用户会话索引中删除
 	if session.UserID != "" {
 		pipe.SRem(ctx, r.userSessionsKey(session.UserID), id)
 	}
-	
+
 	_, err = pipe.Exec(ctx)
 	return err
 }
@@ -366,11 +366,11 @@ func (r *RedisSessionStore) GetByUserID(ctx context.Context, userID string) ([]*
 	// 使用管道批量获取会话
 	pipe := r.client.Pipeline()
 	cmds := make([]*redis.StringCmd, len(sessionIDs))
-	
+
 	for i, id := range sessionIDs {
 		cmds[i] = pipe.Get(ctx, r.sessionKey(id))
 	}
-	
+
 	_, err = pipe.Exec(ctx)
 	if err != nil && err != redis.Nil {
 		return nil, err
@@ -391,7 +391,7 @@ func (r *RedisSessionStore) GetByUserID(ctx context.Context, userID string) ([]*
 		if err := json.Unmarshal(data, &session); err != nil {
 			return nil, err
 		}
-		
+
 		sessions = append(sessions, &session)
 	}
 

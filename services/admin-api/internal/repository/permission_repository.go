@@ -67,6 +67,13 @@ func (r *PermissionRepository) Update(permission *model.AdminPermission) error {
 	return r.db.Save(permission).Error
 }
 
+// UpdateStatus 更新权限状态
+func (r *PermissionRepository) UpdateStatus(id uint64, status int8) error {
+	return r.db.Model(&model.AdminPermission{}).
+		Where("id = ?", id).
+		Update("status", status).Error
+}
+
 // Delete 删除权限
 func (r *PermissionRepository) Delete(id uint64) error {
 	return r.db.Delete(&model.AdminPermission{}, id).Error

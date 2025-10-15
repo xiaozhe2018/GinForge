@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"goweb/pkg/config"
 	"goweb/pkg/logger"
 	"goweb/pkg/redis"
@@ -37,7 +36,7 @@ func main() {
 
 	// 创建 WebSocket 管理器
 	wsManager := websocket.NewManager(log)
-	
+
 	// 启动 WebSocket 管理器
 	go wsManager.Run()
 
@@ -45,7 +44,7 @@ func main() {
 	var sessionMgr *session.SessionManager
 	if redisClient != nil {
 		// 使用 Redis 会话管理
-		sessionMgr = session.NewRedisSessionManager(redisClient, "ws", 24*time.Hour)
+		sessionMgr = session.NewRedisSessionManager(redisClient.GetClient(), "ws", 24*time.Hour)
 		log.Info("使用 Redis 会话管理")
 	} else {
 		// 使用内存会话管理
@@ -57,7 +56,7 @@ func main() {
 	var groupMgr *group.GroupManager
 	if redisClient != nil {
 		// 使用 Redis 分组管理
-		groupMgr = group.NewRedisGroupManager(redisClient, "ws", 24*time.Hour)
+		groupMgr = group.NewRedisGroupManager(redisClient.GetClient(), "ws", 24*time.Hour)
 		log.Info("使用 Redis 分组管理")
 	} else {
 		// 使用内存分组管理
