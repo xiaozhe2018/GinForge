@@ -58,6 +58,7 @@ func (s *AdminService) SetLogger(logger logger.Logger) {
 // UserService 用户服务
 type UserService struct {
 	*AdminService
+	systemService *AdminSystemService
 }
 
 // NewUserService 创建用户服务实例
@@ -67,12 +68,32 @@ func NewUserService(db *gorm.DB, cfg *config.Config, redisClient *pkgRedis.Clien
 	}
 }
 
+// SetSystemService 设置系统服务
+func (s *UserService) SetSystemService(systemService *AdminSystemService) {
+	s.systemService = systemService
+}
+
 // Login 用户登录
 func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*model.AdminUserLoginResponse, error) {
+	ctx := context.Background()
+	
+	// 检查账户是否被锁定（使用Redis存储锁定信息）
+	if s.systemService != nil && s.redisClient != nil && s.redisClient.IsEnabled() {
+		lockKey := fmt.Sprintf("login:locked:%s", req.Username)
+		locked, err := s.redisClient.Exists(ctx, lockKey)
+		if err == nil && locked {
+			// 获取剩余锁定时间
+			ttl, _ := s.redisClient.TTL(ctx, lockKey).Result()
+			return nil, fmt.Errorf("账户已被锁定，请在 %d 分钟后重试", int(ttl.Minutes())+1)
+		}
+	}
+	
 	// 根据用户名获取用户
 	user, err := s.userRepo.GetByUsername(req.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 记录失败尝试
+			s.recordLoginFailure(ctx, req.Username)
 			return nil, errors.New("用户名或密码错误")
 		}
 		return nil, err
@@ -80,6 +101,8 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 
 	// 验证密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		// 记录失败尝试
+		s.recordLoginFailure(ctx, req.Username)
 		return nil, errors.New("用户名或密码错误")
 	}
 
@@ -87,6 +110,9 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 	if user.Status != 1 {
 		return nil, errors.New("用户已被禁用")
 	}
+	
+	// 登录成功，清除失败记录
+	s.clearLoginFailures(ctx, req.Username)
 
 	// 更新用户登录信息（异步执行，不影响登录流程）
 	go func() {
@@ -129,10 +155,16 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 	}
 
 	// 生成JWT Token
+	// 获取会话超时时间（从系统配置读取）
+	sessionTimeout := 24 * 60 // 默认24小时（分钟）
+	if s.systemService != nil {
+		sessionTimeout = s.systemService.GetSessionTimeout(ctx)
+	}
+	
 	claims := jwt.MapClaims{
 		"user_id":  fmt.Sprintf("%d", user.ID),
 		"username": user.Username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		"exp":      time.Now().Add(time.Duration(sessionTimeout) * time.Minute).Unix(),
 	}
 
 	tokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -260,6 +292,14 @@ func (s *UserService) CreateUser(req *model.AdminUserCreateRequest) error {
 		return err
 	}
 
+	// 验证密码是否符合安全策略（从数据库配置读取）
+	if s.systemService != nil {
+		ctx := context.Background()
+		if err := s.systemService.ValidatePassword(ctx, req.Password); err != nil {
+			return err
+		}
+	}
+
 	// 加密密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -364,6 +404,14 @@ func (s *UserService) ChangePassword(userID uint64, req *model.ChangePasswordReq
 	// 验证旧密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
 		return errors.New("旧密码错误")
+	}
+
+	// 验证新密码是否符合安全策略（从数据库配置读取）
+	if s.systemService != nil {
+		ctx := context.Background()
+		if err := s.systemService.ValidatePassword(ctx, req.NewPassword); err != nil {
+			return err
+		}
 	}
 
 	// 加密新密码
@@ -490,4 +538,49 @@ func (s *RoleService) GetRole(id uint64) (*model.AdminRole, error) {
 // DeleteRole 删除角色
 func (s *RoleService) DeleteRole(id uint64) error {
 	return s.roleRepo.Delete(id)
+}
+
+// recordLoginFailure 记录登录失败
+func (s *UserService) recordLoginFailure(ctx context.Context, username string) {
+	if s.redisClient == nil || !s.redisClient.IsEnabled() || s.systemService == nil {
+		return
+	}
+	
+	failureKey := fmt.Sprintf("login:failures:%s", username)
+	lockKey := fmt.Sprintf("login:locked:%s", username)
+	
+	// 增加失败次数
+	failures, err := s.redisClient.Incr(ctx, failureKey).Result()
+	if err != nil {
+		s.logger.Error("Failed to record login failure", "error", err, "username", username)
+		return
+	}
+	
+	// 设置失败记录过期时间（登录锁定时长）
+	lockoutDuration := s.systemService.GetLockoutDuration(ctx)
+	s.redisClient.Expire(ctx, failureKey, time.Duration(lockoutDuration)*time.Minute).Result()
+	
+	// 检查是否达到最大失败次数
+	maxAttempts := s.systemService.GetMaxLoginAttempts(ctx)
+	if int(failures) >= maxAttempts {
+		// 锁定账户
+		if err := s.redisClient.Set(ctx, lockKey, "1", time.Duration(lockoutDuration)*time.Minute); err != nil {
+			s.logger.Error("Failed to lock account", "error", err, "username", username)
+			return
+		}
+		s.logger.Warn("Account locked due to too many failed login attempts", 
+			"username", username, 
+			"failures", failures,
+			"lockout_duration", lockoutDuration)
+	}
+}
+
+// clearLoginFailures 清除登录失败记录
+func (s *UserService) clearLoginFailures(ctx context.Context, username string) {
+	if s.redisClient == nil || !s.redisClient.IsEnabled() {
+		return
+	}
+	
+	failureKey := fmt.Sprintf("login:failures:%s", username)
+	s.redisClient.Del(ctx, failureKey)
 }

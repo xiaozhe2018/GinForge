@@ -2,13 +2,16 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"goweb/pkg/logger"
 	"goweb/pkg/notification"
 	"goweb/pkg/redis"
+	"goweb/pkg/validator"
 	"goweb/services/admin-api/internal/model"
 	"os"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -384,4 +387,136 @@ func (s *AdminSystemService) CheckHealth(ctx context.Context) map[string]interfa
 	}
 
 	return health
+}
+
+// GetPasswordMinLength 获取密码最小长度配置
+func (s *AdminSystemService) GetPasswordMinLength(ctx context.Context) int {
+	value, err := s.GetConfigValue(ctx, "security.min_password_length")
+	if err != nil || value == "" {
+		return 8 // 默认值
+	}
+	
+	minLength, err := strconv.Atoi(value)
+	if err != nil || minLength < 6 {
+		return 8 // 默认值
+	}
+	
+	return minLength
+}
+
+// GetPasswordComplexity 获取密码复杂度配置
+func (s *AdminSystemService) GetPasswordComplexity(ctx context.Context) validator.PasswordComplexity {
+	value, err := s.GetConfigValue(ctx, "security.password_complexity")
+	if err != nil || value == "" {
+		// 默认复杂度要求
+		return validator.PasswordComplexity{
+			RequireLowercase: true,
+			RequireNumbers:   true,
+		}
+	}
+	
+	// 解析JSON数组
+	var requirements []string
+	if err := json.Unmarshal([]byte(value), &requirements); err != nil {
+		// 解析失败，返回默认值
+		return validator.PasswordComplexity{
+			RequireLowercase: true,
+			RequireNumbers:   true,
+		}
+	}
+	
+	return validator.ParseComplexity(requirements)
+}
+
+// ValidatePassword 验证密码是否符合安全策略
+func (s *AdminSystemService) ValidatePassword(ctx context.Context, password string) error {
+	minLength := s.GetPasswordMinLength(ctx)
+	complexity := s.GetPasswordComplexity(ctx)
+	
+	return validator.ValidatePassword(password, minLength, complexity)
+}
+
+// GetMaxLoginAttempts 获取最大登录尝试次数
+func (s *AdminSystemService) GetMaxLoginAttempts(ctx context.Context) int {
+	value, err := s.GetConfigValue(ctx, "security.max_login_attempts")
+	if err != nil || value == "" {
+		return 5 // 默认值
+	}
+	
+	attempts, err := strconv.Atoi(value)
+	if err != nil || attempts < 1 {
+		return 5
+	}
+	
+	return attempts
+}
+
+// GetLockoutDuration 获取账户锁定时长（分钟）
+func (s *AdminSystemService) GetLockoutDuration(ctx context.Context) int {
+	value, err := s.GetConfigValue(ctx, "security.lockout_duration")
+	if err != nil || value == "" {
+		return 15 // 默认15分钟
+	}
+	
+	duration, err := strconv.Atoi(value)
+	if err != nil || duration < 1 {
+		return 15
+	}
+	
+	return duration
+}
+
+// GetSessionTimeout 获取会话超时时间（分钟）
+func (s *AdminSystemService) GetSessionTimeout(ctx context.Context) int {
+	value, err := s.GetConfigValue(ctx, "security.session_timeout")
+	if err != nil || value == "" {
+		return 120 // 默认2小时
+	}
+	
+	timeout, err := strconv.Atoi(value)
+	if err != nil || timeout < 1 {
+		return 120
+	}
+	
+	return timeout
+}
+
+// GetSystemBasicInfo 获取系统基本信息
+func (s *AdminSystemService) GetSystemBasicInfo(ctx context.Context) map[string]string {
+	info := make(map[string]string)
+	
+	// 读取基本配置
+	configs := []string{
+		"system.name",
+		"system.version",
+		"system.description",
+		"system.logo",
+		"system.default_language",
+	}
+	
+	for _, key := range configs {
+		value, err := s.GetConfigValue(ctx, key)
+		if err == nil && value != "" {
+			info[key] = value
+		}
+	}
+	
+	// 设置默认值
+	if info["system.name"] == "" {
+		info["system.name"] = "GinForge 管理后台"
+	}
+	if info["system.version"] == "" {
+		info["system.version"] = s.version
+	}
+	if info["system.description"] == "" {
+		info["system.description"] = "基于 Go + Gin 的企业级微服务开发框架"
+	}
+	if info["system.logo"] == "" {
+		info["system.logo"] = "/logo.svg"
+	}
+	if info["system.default_language"] == "" {
+		info["system.default_language"] = "zh-CN"
+	}
+	
+	return info
 }

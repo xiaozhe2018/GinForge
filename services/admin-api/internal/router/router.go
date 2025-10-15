@@ -31,15 +31,19 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	})
 
 	// 初始化服务
+	// 先初始化系统服务，其他服务需要依赖它
+	adminSystemService := service.NewAdminSystemService(db, redisClient, notifyService, log)
+	
 	userService := service.NewUserService(db, cfg, redisClient)
 	userService.SetLogger(log)
+	userService.SetSystemService(adminSystemService) // 注入系统服务用于安全配置
+	
 	roleService := service.NewRoleService(db, cfg, redisClient)
 	roleService.SetLogger(log)
 	permissionService := service.NewPermissionService(db, cfg, redisClient)
 	permissionService.SetLogger(log)
 	menuService := service.NewMenuService(db, cfg, redisClient)
 	menuService.SetLogger(log)
-	adminSystemService := service.NewAdminSystemService(db, redisClient, notifyService, log)
 	notificationService := service.NewNotificationService(db, redisClient, log)
 
 	// 初始化处理器
@@ -77,7 +81,9 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.GET("/users/:id", adminUserHandler.GetUser)
 	auth.POST("/users", adminUserHandler.CreateUser)
 	auth.PUT("/users/:id", adminUserHandler.UpdateUser)
+	auth.PUT("/users/:id/status", adminUserHandler.UpdateUserStatus)
 	auth.DELETE("/users/:id", adminUserHandler.DeleteUser)
+	auth.POST("/logout", adminAuthHandler.Logout)
 	auth.GET("/profile", adminAuthHandler.GetProfile)
 	auth.PUT("/profile", adminAuthHandler.UpdateProfile)
 	auth.PUT("/change-password", adminAuthHandler.ChangePassword)

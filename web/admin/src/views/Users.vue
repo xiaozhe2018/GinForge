@@ -50,6 +50,20 @@
         <el-table-column prop="email" label="邮箱" width="200" />
         <el-table-column prop="name" label="姓名" width="120" />
         <el-table-column prop="phone" label="手机号" width="130" />
+        <el-table-column label="角色" width="200">
+          <template #default="{ row }">
+            <el-tag
+              v-for="role in row.roles"
+              :key="role.id"
+              type="info"
+              size="small"
+              style="margin-right: 5px;"
+            >
+              {{ role.name }}
+            </el-tag>
+            <span v-if="!row.roles || row.roles.length === 0" style="color: #999;">未分配</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
@@ -124,6 +138,21 @@
             show-password
           />
         </el-form-item>
+        <el-form-item label="角色" prop="role_ids">
+          <el-select
+            v-model="userForm.role_ids"
+            multiple
+            placeholder="请选择角色"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="role in roleList"
+              :key="role.id"
+              :label="role.name"
+              :value="role.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="userForm.status">
             <el-radio :label="1">正常</el-radio>
@@ -145,6 +174,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import * as userApi from '@/api/user'
+import * as roleApi from '@/api/role'
+
+// 角色列表
+const roleList = ref<any[]>([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -196,13 +229,26 @@ const userRules = {
     { required: true, message: '请输入姓名', trigger: 'blur' }
   ],
   phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ],
+  role_ids: [
+    { required: true, message: '请选择至少一个角色', trigger: 'change', type: 'array' }
   ]
+}
+
+// 加载角色列表
+const loadRoleList = async () => {
+  try {
+    const response: any = await roleApi.getRoleList({ page: 1, page_size: 100 })
+    roleList.value = response.list || []
+  } catch (error) {
+    console.error('加载角色列表失败:', error)
+    ElMessage.error('加载角色列表失败')
+  }
 }
 
 // 加载用户列表
@@ -268,7 +314,15 @@ const handleAdd = () => {
 const handleEdit = (row: any) => {
   isEdit.value = true
   dialogVisible.value = true
-  Object.assign(userForm, row)
+  Object.assign(userForm, {
+    id: row.id,
+    username: row.username,
+    email: row.email,
+    name: row.name,
+    phone: row.phone || '',
+    status: row.status,
+    role_ids: row.roles ? row.roles.map((r: any) => r.id) : []
+  })
 }
 
 // 切换用户状态
@@ -367,6 +421,7 @@ const resetUserForm = () => {
 
 onMounted(() => {
   loadUserList()
+  loadRoleList()
 })
 </script>
 

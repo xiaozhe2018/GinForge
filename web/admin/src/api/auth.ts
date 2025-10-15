@@ -99,25 +99,25 @@ export type {
 
 // 用户登录
 export const login = (data: LoginParams) => {
-  return request.post<LoginResponse>('/api/v1/admin/auth/login', data)
+  return request.post<LoginResponse>('/api/v1/admin/login', data)
 }
 
 // 用户登出
 export const logout = () => {
-  return request.post('/api/v1/admin/auth/logout')
+  return request.post('/api/v1/admin/logout')
 }
 
 // 获取当前用户信息
 export const getProfile = () => {
-  return request.get<User>('/api/v1/admin/auth/profile')
+  return request.get<User>('/api/v1/admin/profile')
 }
 
 // 更新当前用户信息
 export const updateProfile = (data: UpdateProfileParams) => {
-  return request.put('/api/v1/admin/auth/profile', data)
+  return request.put('/api/v1/admin/profile', data)
 }
 
 // 修改密码
 export const changePassword = (data: ChangePasswordParams) => {
-  return request.put('/api/v1/admin/auth/change-password', data)
+  return request.put('/api/v1/admin/change-password', data)
 }

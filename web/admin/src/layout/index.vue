@@ -20,35 +20,23 @@
           <span>仪表盘</span>
         </el-menu-item>
         
-        <!-- 用户管理 -->
-        <el-sub-menu index="user-management">
-          <template #title>
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
-          </template>
-          <el-menu-item index="/dashboard/users">用户列表</el-menu-item>
-          <el-menu-item index="/dashboard/users/create">创建用户</el-menu-item>
-        </el-sub-menu>
+        <!-- 后台用户管理 -->
+        <el-menu-item index="/dashboard/users">
+          <el-icon><User /></el-icon>
+          <span>后台用户管理</span>
+        </el-menu-item>
         
         <!-- 角色管理 -->
-        <el-sub-menu index="role-management">
-          <template #title>
-            <el-icon><UserFilled /></el-icon>
-            <span>角色管理</span>
-          </template>
-          <el-menu-item index="/dashboard/roles">角色列表</el-menu-item>
-          <el-menu-item index="/dashboard/roles/create">创建角色</el-menu-item>
-        </el-sub-menu>
+        <el-menu-item index="/dashboard/roles">
+          <el-icon><UserFilled /></el-icon>
+          <span>角色管理</span>
+        </el-menu-item>
         
         <!-- 菜单管理 -->
-        <el-sub-menu index="menu-management">
-          <template #title>
-            <el-icon><Menu /></el-icon>
-            <span>菜单管理</span>
-          </template>
-          <el-menu-item index="/dashboard/menus">菜单列表</el-menu-item>
-          <el-menu-item index="/dashboard/menus/create">创建菜单</el-menu-item>
-        </el-sub-menu>
+        <el-menu-item index="/dashboard/menus">
+          <el-icon><Menu /></el-icon>
+          <span>菜单管理</span>
+        </el-menu-item>
         
         <!-- 权限管理 -->
         <el-menu-item index="/dashboard/permissions">

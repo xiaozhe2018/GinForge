@@ -126,3 +126,27 @@ func (c *Client) SCard(ctx context.Context, key string) *redis.IntCmd {
 	}
 	return c.client.SCard(ctx, key)
 }
+
+// Incr 增加键的整数值
+func (c *Client) Incr(ctx context.Context, key string) *redis.IntCmd {
+	if c.client == nil {
+		return redis.NewIntCmd(ctx)
+	}
+	return c.client.Incr(ctx, key)
+}
+
+// Expire 设置键的过期时间
+func (c *Client) Expire(ctx context.Context, key string, expiration time.Duration) *redis.BoolCmd {
+	if c.client == nil {
+		return redis.NewBoolCmd(ctx)
+	}
+	return c.client.Expire(ctx, key, expiration)
+}
+
+// TTL 获取键的剩余生存时间
+func (c *Client) TTL(ctx context.Context, key string) *redis.DurationCmd {
+	if c.client == nil {
+		return redis.NewDurationCmd(ctx, time.Second, "ttl", key)
+	}
+	return c.client.TTL(ctx, key)
+}
