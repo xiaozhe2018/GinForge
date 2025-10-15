@@ -46,6 +46,62 @@ export const docConfig: DocCategory[] = [
     ]
   },
   {
+    id: 'tutorials',
+    name: '实战教程',
+    icon: 'Edit',
+    docs: [
+      {
+        id: 'create-module',
+        title: '创建完整业务模块',
+        path: 'tutorials/create-module',
+        description: '从零到一创建文章管理模块'
+      },
+      {
+        id: 'faq',
+        title: '常见问题（FAQ）',
+        path: 'tutorials/faq',
+        description: '开发中的常见问题和解决方案'
+      }
+    ]
+  },
+  {
+    id: 'generator',
+    name: 'CRUD 代码生成器',
+    icon: 'MagicStick',
+    docs: [
+      {
+        id: 'introduction',
+        title: '代码生成器介绍',
+        path: 'generator/introduction',
+        description: '了解强大的脚手架工具，效率提升10倍'
+      },
+      {
+        id: 'usage',
+        title: '详细使用指南',
+        path: 'generator/usage',
+        description: '掌握所有命令和选项'
+      },
+      {
+        id: 'auto-register',
+        title: '自动注册功能详解',
+        path: 'generator/auto-register',
+        description: '一键生成开箱即用，效率再提升6倍'
+      },
+      {
+        id: 'configuration',
+        title: '配置文件详解',
+        path: 'generator/configuration',
+        description: '自定义生成规则和字段配置'
+      },
+      {
+        id: 'examples',
+        title: '实战示例',
+        path: 'generator/examples',
+        description: '完整的文章管理模块开发流程'
+      }
+    ]
+  },
+  {
     id: 'core-concepts',
     name: '核心概念',
     icon: 'Reading',
@@ -154,6 +210,31 @@ export const docConfig: DocCategory[] = [
         title: 'Docker 部署',
         path: 'deployment/docker',
         description: '使用 Docker 容器化部署'
+      }
+    ]
+  },
+  {
+    id: 'advanced',
+    name: '高级功能',
+    icon: 'Promotion',
+    docs: [
+      {
+        id: 'message-queue',
+        title: '消息队列详解',
+        path: 'advanced/message-queue',
+        description: '深入掌握异步任务处理'
+      },
+      {
+        id: 'distributed-lock',
+        title: '分布式锁',
+        path: 'advanced/distributed-lock',
+        description: '使用 Redis 解决并发问题'
+      },
+      {
+        id: 'performance',
+        title: '性能优化',
+        path: 'advanced/performance',
+        description: '系统性能优化完整指南'
       }
     ]
   },

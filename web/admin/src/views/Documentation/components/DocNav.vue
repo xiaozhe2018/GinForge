@@ -70,7 +70,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Search, ArrowRight, DocumentRemove, Rocket, Reading, Star, Document, Upload, TrendCharts } from '@element-plus/icons-vue'
+import { Search, ArrowRight, DocumentRemove, Rocket, Reading, Star, Document, Upload, TrendCharts, Edit, Promotion } from '@element-plus/icons-vue'
 import { docConfig, getAllDocs, type DocItem, type DocCategory } from '@/config/docs'
 
 const props = defineProps<{
