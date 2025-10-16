@@ -51,7 +51,7 @@ func (r *ArticlesRepository) List(req *model.ArticlesListRequest) ([]*model.Arti
 	// 搜索
 	if req.Keyword != "" {
 		keyword := "%" + req.Keyword + "%"
-		db = db.Where("id LIKE ? OR title LIKE ? OR slug LIKE ? OR author_name LIKE ? OR summary LIKE ? OR content LIKE ? OR cover_image LIKE ? OR tags LIKE ? OR seo_title LIKE ? OR seo_keywords LIKE ? OR seo_description LIKE ?", keyword, keyword, keyword, keyword, keyword, keyword, keyword, keyword, keyword, keyword, keyword)
+		db = db.Where("id LIKE ? OR title LIKE ? OR content LIKE ? OR summary LIKE ? OR author_name LIKE ? OR cover_image LIKE ? OR tags LIKE ?", keyword, keyword, keyword, keyword, keyword, keyword, keyword)
 	}
 	
 	// 统计总数

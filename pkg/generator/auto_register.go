@@ -91,7 +91,7 @@ func (g *Generator) registerBackendRouter(config *CRUDConfig, opts *AutoRegister
 	// 2. 生成初始化代码
 	initCode := fmt.Sprintf(`
 	// 初始化 %s
-	%sRepo := repository.New%sRepository(database)
+	%sRepo := repository.New%sRepository(db)
 	%sService := service.New%sService(%sRepo, log)
 	%sHandler := handler.New%sHandler(%sService, log)`,
 		config.ModelName,
@@ -169,14 +169,15 @@ func (g *Generator) registerFrontendRouter(config *CRUDConfig, opts *AutoRegiste
 		return fmt.Errorf("前端路由已经注册，跳过")
 	}
 
-	// 生成路由代码
-	routeCode := fmt.Sprintf(`      // %s
+	// 生成路由代码（添加逗号在前一个路由的结尾）
+	routeCode := fmt.Sprintf(`,
+      // %s
       {
         path: '%s',
         name: '%sList',
         component: () => import('@/views/%s/index.vue'),
         meta: { title: '%s', requiresAuth: true }
-      },`,
+      }`,
 		config.Frontend.Title,
 		config.ResourceName,
 		config.ModelName,
@@ -184,9 +185,20 @@ func (g *Generator) registerFrontendRouter(config *CRUDConfig, opts *AutoRegiste
 		config.Frontend.Title,
 	)
 
-	// 找到 dashboard 的 children 数组，在最后插入
-	childrenPattern := regexp.MustCompile(`(path:\s*'dashboard'[\s\S]*?children:\s*\[[\s\S]*?)(\s*\]\s*\})`)
-	fileContent = childrenPattern.ReplaceAllString(fileContent, "${1}"+routeCode+"\n${2}")
+	// 找到文档中心路由（通常是最后一个），在其后插入新路由
+	// 查找 path: 'docs' 的路由定义结束位置
+	docsPattern := regexp.MustCompile(`path:\s*'docs',[\s\S]*?meta:\s*\{[^}]+\}\s*\n\s*\}`)
+	matches := docsPattern.FindStringIndex(fileContent)
+
+	if matches != nil && len(matches) > 0 {
+		// 在文档中心路由之后插入
+		insertPos := matches[1]
+		fileContent = fileContent[:insertPos] + routeCode + fileContent[insertPos:]
+	} else {
+		// 如果没找到，尝试在 children 数组结束前插入
+		childrenEndPattern := regexp.MustCompile(`(\s*)\]\s*\n\s*\}[\s\S]*?const router`)
+		fileContent = childrenEndPattern.ReplaceAllString(fileContent, routeCode+"\n${1}]\n  }\n]\n\nconst router")
+	}
 
 	// 写入文件
 	if !opts.DryRun {

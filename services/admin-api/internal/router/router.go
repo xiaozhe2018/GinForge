@@ -60,12 +60,12 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	adminMenuHandler.SetLogger(log)
 	adminSystemHandler := handler.NewAdminSystemHandler(adminSystemService, notifyService, log)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
-	notificationHandler.SetLogger(log)
 
-	// 文章管理
+	// 初始化 Articles
 	articlesRepo := repository.NewArticlesRepository(db)
 	articlesService := service.NewArticlesService(articlesRepo, log)
 	articlesHandler := handler.NewArticlesHandler(articlesService, log)
+	notificationHandler.SetLogger(log)
 
 	// API路由组
 	api := r.Group("/api/v1/admin")
@@ -115,6 +115,13 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.POST("/menus", adminMenuHandler.CreateMenu)
 	auth.PUT("/menus/:id", adminMenuHandler.UpdateMenu)
 	auth.DELETE("/menus/:id", adminMenuHandler.DeleteMenu)
+
+	// Articles管理 路由
+	auth.GET("/articleses", articlesHandler.List)
+	auth.GET("/articleses/:id", articlesHandler.Get)
+	auth.POST("/articleses", articlesHandler.Create)
+	auth.PUT("/articleses/:id", articlesHandler.Update)
+	auth.DELETE("/articleses/:id", articlesHandler.Delete)
 	auth.GET("/menus/tree", adminMenuHandler.GetMenuTree)
 
 	// 系统管理路由
@@ -129,13 +136,6 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.POST("/system/logs/clear", adminSystemHandler.ClearLogs)
 	auth.GET("/system/runtime", adminSystemHandler.GetRuntimeInfo)
 	auth.GET("/system/health", adminSystemHandler.HealthCheck)
-
-	// 文章管理路由
-	auth.GET("/articles", articlesHandler.List)
-	auth.GET("/articles/:id", articlesHandler.Get)
-	auth.POST("/articles", articlesHandler.Create)
-	auth.PUT("/articles/:id", articlesHandler.Update)
-	auth.DELETE("/articles/:id", articlesHandler.Delete)
 
 	// 通知相关路由
 	auth.POST("/notifications/system", notificationHandler.SendSystemNotification)

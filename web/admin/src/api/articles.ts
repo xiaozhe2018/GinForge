@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from './index'
 
 // ========== 类型定义 ==========
 
@@ -7,25 +7,19 @@ import request from '@/utils/request'
  */
 export interface Articles {
   id: number // 文章ID
-  title: string // 文章标题
-  slug: string // URL别名
+  title: string // 标题
+  summary: string // 摘要
   author_id: number // 作者ID
   author_name: string // 作者名称
   category_id: number // 分类ID
-  summary: string // 文章摘要
   cover_image: string // 封面图片
+  tags: string // 标签（逗号分隔）
+  status: number // 状态:0草稿,1已发布,2已下线
+  is_top: number // 是否置顶
   view_count: number // 浏览次数
   like_count: number // 点赞次数
   comment_count: number // 评论次数
-  is_published: number // 是否发布: 1-已发布, 0-草稿
-  is_top: number // 是否置顶: 1-是, 0-否
-  is_featured: number // 是否推荐: 1-是, 0-否
   published_at: string // 发布时间
-  tags: string // 标签(逗号分隔)
-  seo_title: string // SEO标题
-  seo_keywords: string // SEO关键词
-  seo_description: string // SEO描述
-  status: number // 状态: 1-正常, 0-禁用
   created_at: string // 创建时间
   updated_at: string // 更新时间
 }
@@ -55,52 +49,40 @@ export interface ArticlesListResponse {
  * 创建Articles管理请求参数
  */
 export interface ArticlesCreateParams {
-  title: string // 文章标题
-  slug?: string // URL别名
+  title: string // 标题
+  content: string // 内容
+  summary?: string // 摘要
   author_id: number // 作者ID
   author_name?: string // 作者名称
   category_id?: number // 分类ID
-  summary?: string // 文章摘要
-  content: string // 文章内容
   cover_image?: string // 封面图片
+  tags?: string // 标签（逗号分隔）
+  status: number // 状态:0草稿,1已发布,2已下线
+  is_top: number // 是否置顶
   view_count: number // 浏览次数
   like_count: number // 点赞次数
   comment_count: number // 评论次数
-  is_published: number // 是否发布: 1-已发布, 0-草稿
-  is_top: number // 是否置顶: 1-是, 0-否
-  is_featured: number // 是否推荐: 1-是, 0-否
   published_at?: string // 发布时间
-  tags?: string // 标签(逗号分隔)
-  seo_title?: string // SEO标题
-  seo_keywords?: string // SEO关键词
-  seo_description?: string // SEO描述
-  status: number // 状态: 1-正常, 0-禁用
 }
 
 /**
  * 更新Articles管理请求参数
  */
 export interface ArticlesUpdateParams {
-  title?: string // 文章标题
-  slug?: string // URL别名
+  title?: string // 标题
+  content?: string // 内容
+  summary?: string // 摘要
   author_id?: number // 作者ID
   author_name?: string // 作者名称
   category_id?: number // 分类ID
-  summary?: string // 文章摘要
-  content?: string // 文章内容
   cover_image?: string // 封面图片
+  tags?: string // 标签（逗号分隔）
+  status?: number // 状态:0草稿,1已发布,2已下线
+  is_top?: number // 是否置顶
   view_count?: number // 浏览次数
   like_count?: number // 点赞次数
   comment_count?: number // 评论次数
-  is_published?: number // 是否发布: 1-已发布, 0-草稿
-  is_top?: number // 是否置顶: 1-是, 0-否
-  is_featured?: number // 是否推荐: 1-是, 0-否
   published_at?: string // 发布时间
-  tags?: string // 标签(逗号分隔)
-  seo_title?: string // SEO标题
-  seo_keywords?: string // SEO关键词
-  seo_description?: string // SEO描述
-  status?: number // 状态: 1-正常, 0-禁用
 }
 
 // ========== API 方法 ==========

@@ -27,25 +27,19 @@ func NewArticlesService(repo *repository.ArticlesRepository, logger logger.Logge
 func (s *ArticlesService) Create(req *model.ArticlesCreateRequest) (*model.Articles, error) {
 	articles := &model.Articles{
 		Title: req.Title,
-		Slug: req.Slug,
+		Content: req.Content,
+		Summary: req.Summary,
 		AuthorId: req.AuthorId,
 		AuthorName: req.AuthorName,
 		CategoryId: req.CategoryId,
-		Summary: req.Summary,
-		Content: req.Content,
 		CoverImage: req.CoverImage,
+		Tags: req.Tags,
+		Status: req.Status,
+		IsTop: req.IsTop,
 		ViewCount: req.ViewCount,
 		LikeCount: req.LikeCount,
 		CommentCount: req.CommentCount,
-		IsPublished: req.IsPublished,
-		IsTop: req.IsTop,
-		IsFeatured: req.IsFeatured,
 		PublishedAt: req.PublishedAt,
-		Tags: req.Tags,
-		SeoTitle: req.SeoTitle,
-		SeoKeywords: req.SeoKeywords,
-		SeoDescription: req.SeoDescription,
-		Status: req.Status,
 	}
 	
 	if err := s.repo.Create(articles); err != nil {
@@ -83,25 +77,19 @@ func (s *ArticlesService) Update(id uint64, req *model.ArticlesUpdateRequest) er
 	
 	// 更新字段
 	articles.Title = req.Title
-	articles.Slug = req.Slug
+	articles.Content = req.Content
+	articles.Summary = req.Summary
 	articles.AuthorId = req.AuthorId
 	articles.AuthorName = req.AuthorName
 	articles.CategoryId = req.CategoryId
-	articles.Summary = req.Summary
-	articles.Content = req.Content
 	articles.CoverImage = req.CoverImage
+	articles.Tags = req.Tags
+	articles.Status = req.Status
+	articles.IsTop = req.IsTop
 	articles.ViewCount = req.ViewCount
 	articles.LikeCount = req.LikeCount
 	articles.CommentCount = req.CommentCount
-	articles.IsPublished = req.IsPublished
-	articles.IsTop = req.IsTop
-	articles.IsFeatured = req.IsFeatured
 	articles.PublishedAt = req.PublishedAt
-	articles.Tags = req.Tags
-	articles.SeoTitle = req.SeoTitle
-	articles.SeoKeywords = req.SeoKeywords
-	articles.SeoDescription = req.SeoDescription
-	articles.Status = req.Status
 	
 	if err := s.repo.Update(articles); err != nil {
 		s.logger.Error("更新Articles管理失败", err, "id", id)

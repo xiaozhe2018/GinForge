@@ -109,6 +109,13 @@ const routes: RouteRecordRaw[] = [
         name: 'Documentation',
         component: () => import('@/views/Documentation/index.vue'),
         meta: { title: '文档中心', requiresAuth: true }
+      },
+      // Articles管理
+      {
+        path: 'articleses',
+        name: 'ArticlesList',
+        component: () => import('@/views/Articles/index.vue'),
+        meta: { title: 'Articles管理', requiresAuth: true }
       }
     ]
   }

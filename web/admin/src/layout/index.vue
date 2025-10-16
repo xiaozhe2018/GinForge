@@ -55,6 +55,13 @@
           <el-icon><Reading /></el-icon>
           <span>文档中心</span>
         </el-menu-item>
+          <!-- Articles管理 -->
+          <el-menu-item index="/dashboard/articleses">
+            <el-icon><Document /></el-icon>
+            <span>Articles管理</span>
+          </el-menu-item>
+
+
       </el-menu>
     </el-aside>
 

@@ -13,14 +13,6 @@ var (
 	// 全局标志
 	verbose bool
 	dryRun  bool
-
-	// CRUD 生成标志
-	tableName    string
-	configFile   string
-	outputDir    string
-	withFrontend bool
-	force        bool
-	autoRegister bool // 自动注册路由和菜单
 )
 
 func main() {
@@ -67,6 +59,16 @@ func main() {
 
 // genCrudCmd 生成完整的 CRUD 代码
 func genCrudCmd() *cobra.Command {
+	// 本地变量，避免全局变量冲突
+	var (
+		tableName    string
+		configFile   string
+		outputDir    string
+		withFrontend bool
+		force        bool
+		autoRegister bool
+	)
+
 	cmd := &cobra.Command{
 		Use:   "gen:crud",
 		Short: "生成完整的 CRUD 代码（后端+前端）",
@@ -113,6 +115,13 @@ func genCrudCmd() *cobra.Command {
 
 // genModelCmd 只生成 Model
 func genModelCmd() *cobra.Command {
+	// 本地变量
+	var (
+		tableName string
+		outputDir string
+		force     bool
+	)
+
 	cmd := &cobra.Command{
 		Use:   "gen:model",
 		Short: "只生成 Model 数据模型",
@@ -137,6 +146,12 @@ func genModelCmd() *cobra.Command {
 
 // initConfigCmd 初始化配置文件
 func initConfigCmd() *cobra.Command {
+	// 本地变量
+	var (
+		tableName string
+		outputDir string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "init:config",
 		Short: "创建生成器配置文件模板",
@@ -175,6 +190,14 @@ func listTablesCmd() *cobra.Command {
 
 // runGenCrud 执行 CRUD 生成
 func runGenCrud(cmd *cobra.Command, args []string) error {
+	// 从 flags 获取参数值
+	tableName, _ := cmd.Flags().GetString("table")
+	configFile, _ := cmd.Flags().GetString("config")
+	outputDir, _ := cmd.Flags().GetString("output")
+	withFrontend, _ := cmd.Flags().GetBool("frontend")
+	force, _ := cmd.Flags().GetBool("force")
+	autoRegister, _ := cmd.Flags().GetBool("auto-register")
+
 	fmt.Println("🚀 GinForge CRUD 代码生成器")
 	fmt.Println("================================")
 	fmt.Println()
@@ -227,6 +250,12 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  • 模型名: %s\n", config.ModelName)
 	fmt.Printf("  • 字段数: %d\n", len(config.Fields))
 	fmt.Printf("  • 生成前端: %v\n", opts.WithFrontend)
+	if verbose {
+		fmt.Printf("  • 输出目录: %s\n", opts.OutputDir)
+		if opts.OutputDir == "" {
+			fmt.Printf("  • 实际路径: 项目根目录（services/admin-api/ 和 web/admin/）\n")
+		}
+	}
 	fmt.Println()
 
 	if dryRun {
@@ -329,6 +358,11 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 
 // runGenModel 执行 Model 生成
 func runGenModel(cmd *cobra.Command, args []string) error {
+	// 从 flags 获取参数
+	tableName, _ := cmd.Flags().GetString("table")
+	outputDir, _ := cmd.Flags().GetString("output")
+	force, _ := cmd.Flags().GetBool("force")
+
 	fmt.Println("🚀 GinForge Model 生成器")
 	fmt.Println("================================")
 	fmt.Println()
@@ -367,6 +401,10 @@ func runGenModel(cmd *cobra.Command, args []string) error {
 
 // runInitConfig 执行配置文件初始化
 func runInitConfig(cmd *cobra.Command, args []string) error {
+	// 从 flags 获取参数
+	tableName, _ := cmd.Flags().GetString("table")
+	outputDir, _ := cmd.Flags().GetString("output")
+
 	fmt.Println("🚀 GinForge 配置文件生成器")
 	fmt.Println("================================")
 	fmt.Println()

@@ -7,7 +7,7 @@ import (
 
 // renderFrontendAPITemplate 渲染前端 API 模板
 func renderFrontendAPITemplate(data *TemplateData) (string, error) {
-	tmpl := `import request from '@/utils/request'
+	tmpl := `import request from './index'
 
 // ========== 类型定义 ==========
 
