@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"goweb/pkg/generator"
 
@@ -17,27 +18,9 @@ var (
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "generator",
-		Short: "GinForge 代码生成器",
-		Long: `GinForge 脚手架工具 - 快速生成 CRUD 代码
-
-这个工具可以帮助您：
-  • 从数据库表自动生成完整的 CRUD 代码
-  • 生成后端代码：Model、Repository、Service、Handler
-  • 生成前端代码：API、Vue 列表页、表单页
-  • 支持自定义模板和配置文件
-  • 大幅提升开发效率
-
-示例：
-  # 从数据库表生成 CRUD 代码
-  generator gen:crud --table=articles --module=admin
-
-  # 从配置文件生成
-  generator gen:crud --config=generator/articles.yaml
-
-  # 交互式生成
-  generator gen:crud
-`,
+		Use:     "generator",
+		Short:   "GinForge code generator",
+		Long:    "Auto-generate CRUD code from database tables for admin-api service",
 		Version: "1.0.0",
 	}
 
@@ -231,9 +214,21 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 	}
 
 	// 设置输出选项
-	// 如果outputDir是默认值，设为空让生成器使用项目根目录
+	// 如果outputDir为空，自动检测项目根目录
 	if outputDir == "" || outputDir == "." {
-		outputDir = ""
+		// 查找项目根目录（包含go.mod的目录）
+		if wd, err := os.Getwd(); err == nil {
+			// 向上查找go.mod
+			for dir := wd; dir != "/"; dir = filepath.Dir(dir) {
+				if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+					outputDir = dir
+					break
+				}
+			}
+		}
+		if outputDir == "" || outputDir == "." {
+			outputDir, _ = os.Getwd() // 降级为当前目录
+		}
 	}
 	opts := &generator.GenerateOptions{
 		OutputDir:    outputDir,

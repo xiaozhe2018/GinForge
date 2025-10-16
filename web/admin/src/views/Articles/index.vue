@@ -55,11 +55,11 @@
         />
         <el-table-column
           prop="title"
-          label="标题"
+          label="文章标题"
         />
         <el-table-column
-          prop="summary"
-          label="摘要"
+          prop="slug"
+          label="URL别名"
         />
         <el-table-column
           prop="author_id"
@@ -74,35 +74,13 @@
           label="分类ID"
         />
         <el-table-column
+          prop="summary"
+          label="文章摘要"
+        />
+        <el-table-column
           prop="cover_image"
           label="封面图片"
         />
-        <el-table-column
-          prop="tags"
-          label="标签（逗号分隔）"
-        />
-        <el-table-column
-          prop="status"
-          label="状态:0草稿,1已发布,2已下线"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag :type="row.status ? 'success' : 'info'">
-              {{ row.status ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="is_top"
-          label="是否置顶"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag :type="row.is_top ? 'success' : 'info'">
-              {{ row.is_top ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column
           prop="view_count"
           label="浏览次数"
@@ -116,12 +94,72 @@
           label="评论次数"
         />
         <el-table-column
+          prop="is_published"
+          label="是否发布: 1-已发布, 0-草稿"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.is_published ? 'success' : 'info'">
+              {{ row.is_published ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="is_top"
+          label="是否置顶: 1-是, 0-否"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.is_top ? 'success' : 'info'">
+              {{ row.is_top ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="is_featured"
+          label="是否推荐: 1-是, 0-否"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.is_featured ? 'success' : 'info'">
+              {{ row.is_featured ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="published_at"
           label="发布时间"
           width="180"
         >
           <template #default="{ row }">
             {{ formatDate(row.published_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="tags"
+          label="标签(逗号分隔)"
+        />
+        <el-table-column
+          prop="seo_title"
+          label="SEO标题"
+        />
+        <el-table-column
+          prop="seo_keywords"
+          label="SEO关键词"
+        />
+        <el-table-column
+          prop="seo_description"
+          label="SEO描述"
+        />
+        <el-table-column
+          prop="status"
+          label="状态: 1-正常, 0-禁用"
+          width="100"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.status ? 'success' : 'info'">
+              {{ row.status ? '是' : '否' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column
@@ -180,22 +218,16 @@
         :rules="formRules"
         label-width="100px"
       >
-        <el-form-item label="标题" prop="title">
+        <el-form-item label="文章标题" prop="title">
           <el-input
             v-model="form.title"
-            placeholder="请输入标题"
+            placeholder="请输入文章标题"
           />
         </el-form-item>
-        <el-form-item label="内容" prop="content">
+        <el-form-item label="URL别名" prop="slug">
           <el-input
-            v-model="form.content"
-            placeholder="请输入内容"
-          />
-        </el-form-item>
-        <el-form-item label="摘要" prop="summary">
-          <el-input
-            v-model="form.summary"
-            placeholder="请输入摘要"
+            v-model="form.slug"
+            placeholder="请输入URL别名"
           />
         </el-form-item>
         <el-form-item label="作者ID" prop="author_id">
@@ -217,23 +249,23 @@
             <el-option label="选项2" value="2" />
           </el-select>
         </el-form-item>
+        <el-form-item label="文章摘要" prop="summary">
+          <el-input
+            v-model="form.summary"
+            placeholder="请输入文章摘要"
+          />
+        </el-form-item>
+        <el-form-item label="文章内容" prop="content">
+          <el-input
+            v-model="form.content"
+            placeholder="请输入文章内容"
+          />
+        </el-form-item>
         <el-form-item label="封面图片" prop="cover_image">
           <el-input
             v-model="form.cover_image"
             placeholder="请输入封面图片"
           />
-        </el-form-item>
-        <el-form-item label="标签（逗号分隔）" prop="tags">
-          <el-input
-            v-model="form.tags"
-            placeholder="请输入标签（逗号分隔）"
-          />
-        </el-form-item>
-        <el-form-item label="状态:0草稿,1已发布,2已下线" prop="status">
-          <el-switch v-model="form.status" />
-        </el-form-item>
-        <el-form-item label="是否置顶" prop="is_top">
-          <el-switch v-model="form.is_top" />
         </el-form-item>
         <el-form-item label="浏览次数" prop="view_count">
           <el-input
@@ -253,11 +285,47 @@
             placeholder="请输入评论次数"
           />
         </el-form-item>
+        <el-form-item label="是否发布: 1-已发布, 0-草稿" prop="is_published">
+          <el-switch v-model="form.is_published" />
+        </el-form-item>
+        <el-form-item label="是否置顶: 1-是, 0-否" prop="is_top">
+          <el-switch v-model="form.is_top" />
+        </el-form-item>
+        <el-form-item label="是否推荐: 1-是, 0-否" prop="is_featured">
+          <el-switch v-model="form.is_featured" />
+        </el-form-item>
         <el-form-item label="发布时间" prop="published_at">
           <el-input
             v-model="form.published_at"
             placeholder="请输入发布时间"
           />
+        </el-form-item>
+        <el-form-item label="标签(逗号分隔)" prop="tags">
+          <el-input
+            v-model="form.tags"
+            placeholder="请输入标签(逗号分隔)"
+          />
+        </el-form-item>
+        <el-form-item label="SEO标题" prop="seo_title">
+          <el-input
+            v-model="form.seo_title"
+            placeholder="请输入SEO标题"
+          />
+        </el-form-item>
+        <el-form-item label="SEO关键词" prop="seo_keywords">
+          <el-input
+            v-model="form.seo_keywords"
+            placeholder="请输入SEO关键词"
+          />
+        </el-form-item>
+        <el-form-item label="SEO描述" prop="seo_description">
+          <el-input
+            v-model="form.seo_description"
+            placeholder="请输入SEO描述"
+          />
+        </el-form-item>
+        <el-form-item label="状态: 1-正常, 0-禁用" prop="status">
+          <el-switch v-model="form.status" />
         </el-form-item>
       </el-form>
 
@@ -305,50 +373,50 @@ const currentId = ref<number | null>(null)
 const formRef = ref<FormInstance>()
 const form = reactive<articlesApi.ArticlesCreateParams>({
   title: '',
-  content: '',
-  summary: '',
+  slug: '',
   author_id: 0,
   author_name: '',
   category_id: 0,
+  summary: '',
+  content: '',
   cover_image: '',
-  tags: '',
-  status: 0,
-  is_top: 0,
   view_count: 0,
   like_count: 0,
   comment_count: 0,
+  is_published: 0,
+  is_top: 0,
+  is_featured: 0,
   published_at: '',
+  tags: '',
+  seo_title: '',
+  seo_keywords: '',
+  seo_description: '',
+  status: 0,
 })
 
 // 表单验证规则
 const formRules = reactive<FormRules>({
   title: [
-    { required: true, message: '请输入标题', trigger: 'blur' },
-    { max: 255, message: '长度不能超过255位', trigger: 'blur' },
+    { required: true, message: '请输入文章标题', trigger: 'blur' },
+    { max: 200, message: '长度不能超过200位', trigger: 'blur' },
   ],
-  content: [
-    { required: true, message: '请输入内容', trigger: 'blur' },
-  ],
-  summary: [
-    { max: 500, message: '长度不能超过500位', trigger: 'blur' },
+  slug: [
+    { max: 200, message: '长度不能超过200位', trigger: 'blur' },
   ],
   author_id: [
     { required: true, message: '请输入作者ID', trigger: 'blur' },
   ],
   author_name: [
-    { max: 100, message: '长度不能超过100位', trigger: 'blur' },
+    { max: 50, message: '长度不能超过50位', trigger: 'blur' },
   ],
-  cover_image: [
+  summary: [
     { max: 500, message: '长度不能超过500位', trigger: 'blur' },
   ],
-  tags: [
+  content: [
+    { required: true, message: '请输入文章内容', trigger: 'blur' },
+  ],
+  cover_image: [
     { max: 255, message: '长度不能超过255位', trigger: 'blur' },
-  ],
-  status: [
-    { required: true, message: '请输入状态:0草稿,1已发布,2已下线', trigger: 'blur' },
-  ],
-  is_top: [
-    { required: true, message: '请输入是否置顶', trigger: 'blur' },
   ],
   view_count: [
     { required: true, message: '请输入浏览次数', trigger: 'blur' },
@@ -358,6 +426,30 @@ const formRules = reactive<FormRules>({
   ],
   comment_count: [
     { required: true, message: '请输入评论次数', trigger: 'blur' },
+  ],
+  is_published: [
+    { required: true, message: '请输入是否发布: 1-已发布, 0-草稿', trigger: 'blur' },
+  ],
+  is_top: [
+    { required: true, message: '请输入是否置顶: 1-是, 0-否', trigger: 'blur' },
+  ],
+  is_featured: [
+    { required: true, message: '请输入是否推荐: 1-是, 0-否', trigger: 'blur' },
+  ],
+  tags: [
+    { max: 500, message: '长度不能超过500位', trigger: 'blur' },
+  ],
+  seo_title: [
+    { max: 200, message: '长度不能超过200位', trigger: 'blur' },
+  ],
+  seo_keywords: [
+    { max: 500, message: '长度不能超过500位', trigger: 'blur' },
+  ],
+  seo_description: [
+    { max: 500, message: '长度不能超过500位', trigger: 'blur' },
+  ],
+  status: [
+    { required: true, message: '请输入状态: 1-正常, 0-禁用', trigger: 'blur' },
   ],
 })
 
@@ -424,19 +516,25 @@ const handleEdit = async (row: articlesApi.Articles) => {
   try {
     const data = await articlesApi.getArticles(row.id)
     form.title = data.title
-    form.content = data.content
-    form.summary = data.summary
+    form.slug = data.slug
     form.author_id = data.author_id
     form.author_name = data.author_name
     form.category_id = data.category_id
+    form.summary = data.summary
+    form.content = data.content
     form.cover_image = data.cover_image
-    form.tags = data.tags
-    form.status = data.status
-    form.is_top = data.is_top
     form.view_count = data.view_count
     form.like_count = data.like_count
     form.comment_count = data.comment_count
+    form.is_published = data.is_published
+    form.is_top = data.is_top
+    form.is_featured = data.is_featured
     form.published_at = data.published_at
+    form.tags = data.tags
+    form.seo_title = data.seo_title
+    form.seo_keywords = data.seo_keywords
+    form.seo_description = data.seo_description
+    form.status = data.status
     dialogVisible.value = true
   } catch (error: any) {
     ElMessage.error(error?.message || '获取数据失败')
@@ -498,19 +596,25 @@ const handleDialogClose = () => {
 const resetForm = () => {
   formRef.value?.resetFields()
   form.title = ''
-  form.content = ''
-  form.summary = ''
+  form.slug = ''
   form.author_id = 0
   form.author_name = ''
   form.category_id = 0
+  form.summary = ''
+  form.content = ''
   form.cover_image = ''
-  form.tags = ''
-  form.status = 0
-  form.is_top = 0
   form.view_count = 0
   form.like_count = 0
   form.comment_count = 0
+  form.is_published = 0
+  form.is_top = 0
+  form.is_featured = 0
   form.published_at = ''
+  form.tags = ''
+  form.seo_title = ''
+  form.seo_keywords = ''
+  form.seo_description = ''
+  form.status = 0
 }
 
 // 格式化日期

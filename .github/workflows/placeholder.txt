@@ -1,0 +1,5 @@
+GitHub Actions workflows will be added here in future releases.
+Planned workflows:
+- CI: Build and test on push
+- Release: Auto release on tag
+- Lint: Code quality checks
