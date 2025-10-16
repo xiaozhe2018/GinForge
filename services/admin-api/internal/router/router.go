@@ -8,6 +8,7 @@ import (
 	"goweb/pkg/redis"
 	"goweb/pkg/response"
 	"goweb/services/admin-api/internal/handler"
+	"goweb/services/admin-api/internal/repository"
 	"goweb/services/admin-api/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -60,6 +61,11 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	adminSystemHandler := handler.NewAdminSystemHandler(adminSystemService, notifyService, log)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 	notificationHandler.SetLogger(log)
+
+	// 文章管理
+	articlesRepo := repository.NewArticlesRepository(db)
+	articlesService := service.NewArticlesService(articlesRepo, log)
+	articlesHandler := handler.NewArticlesHandler(articlesService, log)
 
 	// API路由组
 	api := r.Group("/api/v1/admin")
@@ -123,6 +129,13 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.POST("/system/logs/clear", adminSystemHandler.ClearLogs)
 	auth.GET("/system/runtime", adminSystemHandler.GetRuntimeInfo)
 	auth.GET("/system/health", adminSystemHandler.HealthCheck)
+
+	// 文章管理路由
+	auth.GET("/articles", articlesHandler.List)
+	auth.GET("/articles/:id", articlesHandler.Get)
+	auth.POST("/articles", articlesHandler.Create)
+	auth.PUT("/articles/:id", articlesHandler.Update)
+	auth.DELETE("/articles/:id", articlesHandler.Delete)
 
 	// 通知相关路由
 	auth.POST("/notifications/system", notificationHandler.SendSystemNotification)

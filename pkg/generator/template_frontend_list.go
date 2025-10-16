@@ -71,7 +71,7 @@ func renderFrontendListTemplate(data *TemplateData) (string, error) {
         >
           <template #default="{ row }">
             <el-tag :type="row.{{toSnakeCase .Name}} ? 'success' : 'info'">
-              {{ row.{{toSnakeCase .Name}} ? '是' : '否' }}
+              {{"{{"}} row.{{toSnakeCase .Name}} ? '是' : '否' {{"}}"}}
             </el-tag>
           </template>
         </el-table-column>
@@ -79,7 +79,7 @@ func renderFrontendListTemplate(data *TemplateData) (string, error) {
           width="180"
         >
           <template #default="{ row }">
-            {{ formatDate(row.{{toSnakeCase .Name}}) }}
+            {{"{{"}} formatDate(row.{{toSnakeCase .Name}}) {{"}}"}}
           </template>
         </el-table-column>
 {{- else}}

@@ -45,7 +45,7 @@ type {{.ModelName}}ListRequest struct {
 type {{.ModelName}}CreateRequest struct {
 {{- range .Fields}}
 {{- if and .FormVisible (not .AutoIncrement)}}
-	{{toPascalCase .Name}} {{stripPointer .GoType}} ` + "`" + `json:"{{toSnakeCase .Name}}"{{if .Validations}} binding:"{{joinValidations .Validations}}"{{end}}` + "`" + ` // {{.Comment}}
+	{{toPascalCase .Name}} {{.GoType}} ` + "`" + `json:"{{toSnakeCase .Name}}"{{if .Validations}} binding:"{{joinValidations .Validations}}"{{end}}` + "`" + ` // {{.Comment}}
 {{- end}}
 {{- end}}
 }
@@ -54,7 +54,7 @@ type {{.ModelName}}CreateRequest struct {
 type {{.ModelName}}UpdateRequest struct {
 {{- range .Fields}}
 {{- if and .FormVisible (not .IsPrimaryKey) (not .AutoIncrement)}}
-	{{toPascalCase .Name}} {{if .Nullable}}*{{end}}{{stripPointer .GoType}} ` + "`" + `json:"{{toSnakeCase .Name}}"{{if .Validations}} binding:"{{joinValidations .Validations}}"{{end}}` + "`" + ` // {{.Comment}}
+	{{toPascalCase .Name}} {{.GoType}} ` + "`" + `json:"{{toSnakeCase .Name}}"{{if .Validations}} binding:"{{joinValidations .Validations}}"{{end}}` + "`" + ` // {{.Comment}}
 {{- end}}
 {{- end}}
 }

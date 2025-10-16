@@ -66,7 +66,8 @@ func (r *{{.ModelName}}Repository) List(req *model.{{.ModelName}}ListRequest) ([
 {{- if .HasSearch}}
 	// 搜索
 	if req.Keyword != "" {
-		db = db.Where("{{getSearchCondition .Fields}}", "%"+req.Keyword+"%"{{getSearchParams .Fields}})
+		keyword := "%" + req.Keyword + "%"
+		db = db.Where("{{getSearchCondition .Fields}}", keyword{{getSearchParams .Fields}})
 	}
 {{- end}}
 	
@@ -176,7 +177,7 @@ func getSearchParams(fields []FieldConfig) string {
 
 	params := []string{}
 	for i := 1; i < len(searchFields); i++ {
-		params = append(params, `", %"+req.Keyword+"%"`)
+		params = append(params, ", keyword")
 	}
 
 	return strings.Join(params, "")

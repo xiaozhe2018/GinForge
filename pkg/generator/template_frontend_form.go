@@ -12,7 +12,7 @@ func renderFrontendFormTemplate(data *TemplateData) (string, error) {
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>{{ isEdit ? '编辑{{.Title}}' : '新建{{.Title}}' }}</span>
+          <span>{{"{{"}} isEdit ? '编辑{{.Title}}' : '新建{{.Title}}' {{"}}"}}</span>
           <el-button @click="handleBack">返回</el-button>
         </div>
       </template>

@@ -63,7 +63,7 @@ func (h *{{.ModelName}}Handler) List(c *gin.Context) {
 		return
 	}
 	
-	response.SuccessWithData(c, gin.H{
+	response.Success(c, gin.H{
 		"list":  model.To{{.ModelName}}ResponseList(list),
 		"total": total,
 		"page":  req.Page,

@@ -78,13 +78,7 @@ func (s *{{.ModelName}}Service) Update(id uint64, req *model.{{.ModelName}}Updat
 	// 更新字段
 {{- range .Fields}}
 {{- if and .FormVisible (not .IsPrimaryKey) (not .AutoIncrement)}}
-	{{- if .Nullable}}
-	if req.{{toPascalCase .Name}} != nil {
-		{{$.ModelNameCamel}}.{{toPascalCase .Name}} = *req.{{toPascalCase .Name}}
-	}
-	{{- else}}
 	{{$.ModelNameCamel}}.{{toPascalCase .Name}} = req.{{toPascalCase .Name}}
-	{{- end}}
 {{- end}}
 {{- end}}
 	

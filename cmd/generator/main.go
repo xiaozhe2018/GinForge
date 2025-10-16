@@ -16,7 +16,6 @@ var (
 
 	// CRUD 生成标志
 	tableName    string
-	moduleName   string
 	configFile   string
 	outputDir    string
 	withFrontend bool
@@ -83,28 +82,31 @@ func genCrudCmd() *cobra.Command {
   • 路由配置提示
 
 使用方式：
-  # 从数据库表生成
-  generator gen:crud --table=articles --module=admin
+  # 从数据库表生成（生成到 admin-api 服务）
+  generator gen:crud --table=articles
 
   # 从配置文件生成
   generator gen:crud --config=generator/articles.yaml
 
   # 只生成后端代码
-  generator gen:crud --table=articles --module=admin --no-frontend
+  generator gen:crud --table=articles --frontend=false
 
   # 强制覆盖已存在的文件
-  generator gen:crud --table=articles --module=admin --force
+  generator gen:crud --table=articles --force
+  
+注意：所有代码将生成到 services/admin-api/ 和 web/admin/
 `,
 		RunE: runGenCrud,
 	}
 
 	cmd.Flags().StringVarP(&tableName, "table", "t", "", "数据库表名（必填，除非使用 --config）")
-	cmd.Flags().StringVarP(&moduleName, "module", "m", "admin", "模块名称（admin/user/file）")
 	cmd.Flags().StringVarP(&configFile, "config", "c", "", "配置文件路径（YAML 格式）")
-	cmd.Flags().StringVarP(&outputDir, "output", "o", ".", "输出目录（默认当前目录）")
+	cmd.Flags().StringVarP(&outputDir, "output", "o", "", "输出目录（默认为空，自动使用项目根目录）")
 	cmd.Flags().BoolVar(&withFrontend, "frontend", true, "生成前端代码")
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "强制覆盖已存在的文件")
 	cmd.Flags().BoolVarP(&autoRegister, "auto-register", "a", false, "自动注册路由和菜单")
+
+	// 注意：所有代码生成到 admin-api 服务和 admin 前端
 
 	return cmd
 }
@@ -117,13 +119,14 @@ func genModelCmd() *cobra.Command {
 		Long: `从数据库表生成 Model 数据模型
 
 示例：
-  generator gen:model --table=articles --module=admin
+  generator gen:model --table=articles
+  
+注意：模型将生成到 services/admin-api/internal/model/
 `,
 		RunE: runGenModel,
 	}
 
 	cmd.Flags().StringVarP(&tableName, "table", "t", "", "数据库表名（必填）")
-	cmd.Flags().StringVarP(&moduleName, "module", "m", "admin", "模块名称")
 	cmd.Flags().StringVarP(&outputDir, "output", "o", ".", "输出目录")
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "强制覆盖已存在的文件")
 
@@ -197,13 +200,18 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 		}
 
 		fmt.Printf("📊 读取数据库表: %s\n", tableName)
-		config, err = gen.GenerateConfigFromTable(tableName, moduleName)
+		// 固定使用 admin 模块（后台管理）
+		config, err = gen.GenerateConfigFromTable(tableName, "admin")
 		if err != nil {
 			return fmt.Errorf("读取表结构失败: %w", err)
 		}
 	}
 
 	// 设置输出选项
+	// 如果outputDir是默认值，设为空让生成器使用项目根目录
+	if outputDir == "" || outputDir == "." {
+		outputDir = ""
+	}
 	opts := &generator.GenerateOptions{
 		OutputDir:    outputDir,
 		WithFrontend: withFrontend,
@@ -215,10 +223,10 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	fmt.Println("📝 生成配置:")
 	fmt.Printf("  • 表名: %s\n", config.Table)
-	fmt.Printf("  • 模块: %s\n", config.Module)
+	fmt.Printf("  • 目标服务: admin-api (后台管理)\n")
 	fmt.Printf("  • 模型名: %s\n", config.ModelName)
 	fmt.Printf("  • 字段数: %d\n", len(config.Fields))
-	fmt.Printf("  • 前端代码: %v\n", opts.WithFrontend)
+	fmt.Printf("  • 生成前端: %v\n", opts.WithFrontend)
 	fmt.Println()
 
 	if dryRun {
@@ -285,12 +293,12 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 		}
 		fmt.Println()
 		fmt.Println("  🚀 现在只需重启服务即可使用！")
-		fmt.Println("     后端: cd services/" + config.Module + "-api && go run cmd/server/main.go")
-		fmt.Println("     前端: 刷新浏览器")
+		fmt.Println("     后端: cd services/admin-api && go run cmd/server/main.go")
+		fmt.Println("     前端: 刷新浏览器 (http://localhost:3000)")
 	} else {
 		fmt.Println("📌 后续步骤:")
 		fmt.Println("  1. 在路由文件中注册新的 Handler")
-		fmt.Printf("     在 services/%s-api/internal/router/router.go 中添加:\n", config.Module)
+		fmt.Println("     在 services/admin-api/internal/router/router.go 中添加:")
 		fmt.Printf("     %sHandler := handler.New%sHandler(%sService, log)\n", config.ModelNameCamel, config.ModelName, config.ModelNameCamel)
 		fmt.Printf("     auth.GET(\"/%s\", %sHandler.List)\n", config.ResourceName, config.ModelNameCamel)
 		fmt.Printf("     auth.POST(\"/%s\", %sHandler.Create)\n", config.ResourceName, config.ModelNameCamel)
@@ -301,15 +309,15 @@ func runGenCrud(cmd *cobra.Command, args []string) error {
 		if opts.WithFrontend {
 			fmt.Println("  2. 在前端路由中添加新页面")
 			fmt.Println("     在 web/admin/src/router/index.ts 中添加:")
-			fmt.Printf("     { path: '%s', name: '%sList', component: () => import('@/views/%s/index.vue') }\n",
+			fmt.Printf("     { path: '/%s', name: '%sList', component: () => import('@/views/%s/List.vue') }\n",
 				config.ResourceName, config.ModelName, config.ModelName)
 			fmt.Println()
-			fmt.Println("  3. 在菜单中添加入口")
-			fmt.Println("     在 web/admin/src/layout/index.vue 中添加菜单项")
+			fmt.Println("  3. 在菜单中添加入口（通过管理后台菜单管理功能）")
 			fmt.Println()
 		}
 
-		fmt.Println("  4. 重启服务并测试功能")
+		fmt.Println("  4. 重启 admin-api 服务并测试功能")
+		fmt.Println("     cd services/admin-api && go run cmd/server/main.go")
 		fmt.Println()
 		fmt.Println("💡 提示: 使用 --auto-register 或 -a 选项可以自动完成上述步骤")
 	}
@@ -330,7 +338,8 @@ func runGenModel(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("初始化生成器失败: %w", err)
 	}
 
-	config, err := gen.GenerateConfigFromTable(tableName, moduleName)
+	// 固定使用 admin 模块
+	config, err := gen.GenerateConfigFromTable(tableName, "admin")
 	if err != nil {
 		return fmt.Errorf("读取表结构失败: %w", err)
 	}
@@ -348,8 +357,9 @@ func runGenModel(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("✅ Model 生成完成！")
+	fmt.Println("📁 生成位置: services/admin-api/internal/model/")
 	if len(result.Files) > 0 {
-		fmt.Printf("📁 文件: %s\n", result.Files[0].Path)
+		fmt.Printf("📄 文件名: %s\n", result.Files[0].Path)
 	}
 
 	return nil
@@ -366,7 +376,8 @@ func runInitConfig(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("初始化生成器失败: %w", err)
 	}
 
-	config, err := gen.GenerateConfigFromTable(tableName, moduleName)
+	// 固定使用 admin 模块
+	config, err := gen.GenerateConfigFromTable(tableName, "admin")
 	if err != nil {
 		return fmt.Errorf("读取表结构失败: %w", err)
 	}
@@ -409,7 +420,8 @@ func runListTables(cmd *cobra.Command, args []string) error {
 
 	fmt.Println()
 	fmt.Println("💡 使用示例:")
-	fmt.Println("  generator gen:crud --table=<表名> --module=admin")
+	fmt.Println("  generator gen:crud --table=<表名>")
+	fmt.Println("  # 所有代码将生成到 admin-api 服务和 admin 前端")
 
 	return nil
 }

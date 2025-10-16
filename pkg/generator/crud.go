@@ -101,8 +101,13 @@ func (g *Generator) prepareTemplateData(config *CRUDConfig) *TemplateData {
 
 // generateModel 生成 Model 文件
 func (g *Generator) generateModel(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	// 生成文件路径
-	outputPath := filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "model")
+	// 生成文件路径（如果 outputDir 为空，直接使用相对路径）
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("services", config.Module+"-api", "internal", "model")
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "model")
+	}
 	filename := toSnakeCase(config.ModelName) + ".go"
 	fullPath := filepath.Join(outputPath, filename)
 
@@ -154,7 +159,12 @@ func (g *Generator) generateModel(data *TemplateData, config *CRUDConfig, opts *
 
 // generateRepository 生成 Repository 文件
 func (g *Generator) generateRepository(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	outputPath := filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "repository")
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("services", config.Module+"-api", "internal", "repository")
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "repository")
+	}
 	filename := toSnakeCase(config.ModelName) + "_repository.go"
 	fullPath := filepath.Join(outputPath, filename)
 
@@ -187,7 +197,12 @@ func (g *Generator) generateRepository(data *TemplateData, config *CRUDConfig, o
 
 // generateService 生成 Service 文件
 func (g *Generator) generateService(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	outputPath := filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "service")
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("services", config.Module+"-api", "internal", "service")
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "service")
+	}
 	filename := toSnakeCase(config.ModelName) + "_service.go"
 	fullPath := filepath.Join(outputPath, filename)
 
@@ -220,7 +235,12 @@ func (g *Generator) generateService(data *TemplateData, config *CRUDConfig, opts
 
 // generateHandler 生成 Handler 文件
 func (g *Generator) generateHandler(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	outputPath := filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "handler")
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("services", config.Module+"-api", "internal", "handler")
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "services", config.Module+"-api", "internal", "handler")
+	}
 	filename := toSnakeCase(config.ModelName) + "_handler.go"
 	fullPath := filepath.Join(outputPath, filename)
 
@@ -253,7 +273,12 @@ func (g *Generator) generateHandler(data *TemplateData, config *CRUDConfig, opts
 
 // generateFrontendAPI 生成前端 API 文件
 func (g *Generator) generateFrontendAPI(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	outputPath := filepath.Join(opts.OutputDir, "web", "admin", "src", "api")
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("web", "admin", "src", "api")
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "web", "admin", "src", "api")
+	}
 	filename := toSnakeCase(config.ModelName) + ".ts"
 	fullPath := filepath.Join(outputPath, filename)
 
@@ -286,7 +311,12 @@ func (g *Generator) generateFrontendAPI(data *TemplateData, config *CRUDConfig, 
 
 // generateFrontendListView 生成前端列表页面
 func (g *Generator) generateFrontendListView(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	outputPath := filepath.Join(opts.OutputDir, "web", "admin", "src", "views", config.ModelName)
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("web", "admin", "src", "views", config.ModelName)
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "web", "admin", "src", "views", config.ModelName)
+	}
 	filename := "index.vue"
 	fullPath := filepath.Join(outputPath, filename)
 
@@ -319,7 +349,12 @@ func (g *Generator) generateFrontendListView(data *TemplateData, config *CRUDCon
 
 // generateFrontendFormView 生成前端表单页面
 func (g *Generator) generateFrontendFormView(data *TemplateData, config *CRUDConfig, opts *GenerateOptions) *FileResult {
-	outputPath := filepath.Join(opts.OutputDir, "web", "admin", "src", "views", config.ModelName)
+	var outputPath string
+	if opts.OutputDir == "" {
+		outputPath = filepath.Join("web", "admin", "src", "views", config.ModelName)
+	} else {
+		outputPath = filepath.Join(opts.OutputDir, "web", "admin", "src", "views", config.ModelName)
+	}
 	filename := "Form.vue"
 	fullPath := filepath.Join(outputPath, filename)
 
