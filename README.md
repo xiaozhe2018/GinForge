@@ -335,34 +335,51 @@ make test           # 运行所有测试
 make test-coverage  # 生成覆盖率报告
 ```
 
-## 🌟 Star History
+## 🌟 给个Star吧
 
-如果这个项目对您有帮助，请给一个 ⭐️ Star 支持一下！
+如果这个项目对你有帮助，麻烦给个 ⭐️ Star 支持一下！
 
-## 🤝 贡献
+你的Star是我继续维护的动力😊
 
-欢迎贡献代码、提交Issue、完善文档！
+### Star History
 
-查看 [贡献指南](./CONTRIBUTING.md) 了解如何参与项目。
+<a href="https://star-history.com/#xiaozhe2018/GinForge&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=xiaozhe2018/GinForge&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=xiaozhe2018/GinForge&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=xiaozhe2018/GinForge&type=Date" />
+  </picture>
+</a>
+
+## 🤝 欢迎贡献
+
+欢迎大家一起完善这个项目：
+- 🐛 发现bug？提Issue告诉我
+- 💡 有好的想法？欢迎提PR
+- 📖 文档有问题？也欢迎指出
+
+查看 [贡献指南](./CONTRIBUTING.md) 了解详情。
+
+## 💬 交流
+
+- 💬 **GitHub Issues**: 有问题随时提，我会尽快回复
+- 💭 **GitHub Discussions**: 一起讨论技术问题
 
 ## 📄 开源协议
 
-本项目采用 [MIT License](./LICENSE) 开源协议。
+MIT License - 随便用，但记得保留版权声明哈😊
 
-## 💬 交流群
+## 🙏 感谢
 
-- **GitHub Issues**: [提问题/建议](https://github.com/xiaozhe2018/GinForge/issues)
-- **GitHub Discussions**: [技术讨论](https://github.com/xiaozhe2018/GinForge/discussions)
+感谢每一个使用这个框架的朋友！
 
-## 🙏 致谢
-
-感谢所有贡献者和使用者的支持！
+如果你觉得有用，帮我分享给更多需要的人吧！
 
 ---
 
 <div align="center">
 
-**如果觉得不错，请点个 ⭐️ Star 支持一下，谢谢！**
+**做开源不易，点个⭐支持一下吧，谢谢！**
 
 Made with ❤️ by [xiaozhe2018](https://github.com/xiaozhe2018)
 

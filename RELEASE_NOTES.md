@@ -40,12 +40,16 @@ go run ./cmd/generator gen:crud --table=articles
 - **部署配置**: Docker + K8s + Istio
 - **完整文档**: 46个文档文件
 
-## 🎯 适合谁使用？
+## 🎯 我觉得这个框架适合谁？
 
-✅ 需要快速搭建管理后台的团队  
-✅ 想学习Go微服务架构的开发者  
-✅ 需要企业级权限系统的项目  
-✅ 想要规范化工程实践的团队
+如果你：
+- ✅ 经常写CRUD觉得很烦
+- ✅ 需要快速搭建一个管理后台
+- ✅ 想学习Go微服务架构但不知从何下手
+- ✅ 需要一个企业级的权限系统
+- ✅ 想要一个规范的项目模板参考
+
+那我觉得这个框架应该能帮到你。
 
 ## 🔗 链接
 
@@ -53,13 +57,19 @@ go run ./cmd/generator gen:crud --table=articles
 - **文档**: https://github.com/xiaozhe2018/GinForge/blob/main/docs/INDEX.md
 - **快速开始**: https://github.com/xiaozhe2018/GinForge/blob/main/docs/QUICK_START.md
 
-## 💬 反馈
+## 💬 欢迎反馈
 
-欢迎通过以下方式反馈：
-- GitHub Issues: https://github.com/xiaozhe2018/GinForge/issues
-- Email: your-email@example.com
+这是我第一次开源这么大的项目，肯定还有很多不足的地方。
 
----
+如果你在使用中遇到问题，或者有好的建议，欢迎：
+- 提Issue：https://github.com/xiaozhe2018/GinForge/issues
+- 或者直接提PR，我会认真review的
 
-**如果这个项目对你有帮助，请给一个 ⭐ Star 支持一下！**
+## 🙏 最后
+
+如果这个项目对你有帮助，麻烦给个 ⭐ Star 支持一下。
+
+你的Star是我继续维护这个项目的动力！
+
+谢谢大家！ 😊
 
