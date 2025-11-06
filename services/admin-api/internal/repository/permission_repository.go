@@ -92,9 +92,9 @@ func (r *PermissionRepository) GetByCode(code string) (*model.AdminPermission, e
 // GetByUserID 根据用户ID获取权限列表
 func (r *PermissionRepository) GetByUserID(userID uint64) ([]model.AdminPermission, error) {
 	var permissions []model.AdminPermission
-	err := r.db.Joins("JOIN admin_role_permissions ON admin_permissions.id = admin_role_permissions.permission_id").
-		Joins("JOIN admin_user_roles ON admin_role_permissions.role_id = admin_user_roles.role_id").
-		Where("admin_user_roles.user_id = ?", userID).
+	err := r.db.Joins("JOIN gf_admin_role_permissions ON gf_admin_permissions.id = gf_admin_role_permissions.permission_id").
+		Joins("JOIN gf_admin_user_roles ON gf_admin_role_permissions.role_id = gf_admin_user_roles.role_id").
+		Where("gf_admin_user_roles.user_id = ?", userID).
 		Find(&permissions).Error
 	if err != nil {
 		return nil, err
@@ -106,11 +106,11 @@ func (r *PermissionRepository) GetByUserID(userID uint64) ([]model.AdminPermissi
 func (r *PermissionRepository) GetCodesByUserID(userID uint64) ([]string, error) {
 	var codes []string
 	err := r.db.Model(&model.AdminPermission{}).
-		Select("admin_permissions.code").
-		Joins("JOIN admin_role_permissions ON admin_permissions.id = admin_role_permissions.permission_id").
-		Joins("JOIN admin_user_roles ON admin_role_permissions.role_id = admin_user_roles.role_id").
-		Where("admin_user_roles.user_id = ?", userID).
-		Pluck("admin_permissions.code", &codes).Error
+		Select("gf_admin_permissions.code").
+		Joins("JOIN gf_admin_role_permissions ON gf_admin_permissions.id = gf_admin_role_permissions.permission_id").
+		Joins("JOIN gf_admin_user_roles ON gf_admin_role_permissions.role_id = gf_admin_user_roles.role_id").
+		Where("gf_admin_user_roles.user_id = ?", userID).
+		Pluck("gf_admin_permissions.code", &codes).Error
 	if err != nil {
 		return nil, err
 	}

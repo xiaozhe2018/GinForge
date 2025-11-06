@@ -22,5 +22,5 @@ type OperationLog struct {
 
 // TableName 指定表名
 func (OperationLog) TableName() string {
-	return "admin_operation_logs"
+	return "gf_admin_operation_logs"
 }

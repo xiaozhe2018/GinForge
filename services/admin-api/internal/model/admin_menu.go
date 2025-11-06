@@ -25,12 +25,12 @@ type AdminMenu struct {
 	// 关联
 	Parent   *AdminMenu  `json:"parent,omitempty" gorm:"foreignKey:ParentID"`
 	Children []AdminMenu `json:"children,omitempty" gorm:"foreignKey:ParentID"`
-	Roles    []AdminRole `json:"roles,omitempty" gorm:"many2many:admin_role_menus;"`
+	Roles    []AdminRole `json:"roles,omitempty" gorm:"many2many:gf_admin_role_menus;"`
 }
 
 // TableName 返回表名
 func (AdminMenu) TableName() string {
-	return "admin_menus"
+	return "gf_admin_menus"
 }
 
 // AdminMenuCreateRequest 创建菜单请求

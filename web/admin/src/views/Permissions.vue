@@ -327,7 +327,7 @@ const fetchPermissionList = async () => {
       resource: '',  // 后端没有resource字段
       method: '',    // 后端没有method字段
       sort: 0,
-      status: 'active',  // 后端没有status字段
+      status: perm.status !== undefined ? Number(perm.status) : 1,  // 从后端读取status，默认为1（启用）
       description: perm.description || '',
       createdAt: perm.created_at
     }))
@@ -365,7 +365,7 @@ const handleCreate = () => {
     resource: '',
     method: '',
     sort: 0,
-    status: 'active',
+    status: 1,  // 默认启用（数字类型）
     description: ''
   })
   dialogVisible.value = true
@@ -383,7 +383,7 @@ const handleAddChild = (row: any) => {
     resource: '',
     method: '',
     sort: 0,
-    status: 'active',
+    status: 1,  // 默认启用（数字类型）
     description: ''
   })
   dialogVisible.value = true

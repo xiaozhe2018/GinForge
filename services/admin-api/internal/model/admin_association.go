@@ -14,7 +14,7 @@ type AdminUserRole struct {
 
 // TableName 返回表名
 func (AdminUserRole) TableName() string {
-	return "admin_user_roles"
+	return "gf_admin_user_roles"
 }
 
 // AdminRolePermission 角色权限关联表
@@ -27,7 +27,7 @@ type AdminRolePermission struct {
 
 // TableName 返回表名
 func (AdminRolePermission) TableName() string {
-	return "admin_role_permissions"
+	return "gf_admin_role_permissions"
 }
 
 // AdminRoleMenu 角色菜单关联表
@@ -40,5 +40,5 @@ type AdminRoleMenu struct {
 
 // TableName 返回表名
 func (AdminRoleMenu) TableName() string {
-	return "admin_role_menus"
+	return "gf_admin_role_menus"
 }

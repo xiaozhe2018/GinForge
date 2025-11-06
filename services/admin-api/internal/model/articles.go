@@ -34,7 +34,7 @@ type Articles struct {
 
 // TableName 指定表名
 func (articles *Articles) TableName() string {
-	return "articles"
+	return "gf_articles"
 }
 
 // ArticlesListRequest Articles管理列表请求

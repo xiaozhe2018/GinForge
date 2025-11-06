@@ -144,11 +144,31 @@ router.beforeEach((to, _from, next) => {
   
   // 检查权限
   if (to.meta.permission) {
-    const permissions = JSON.parse(localStorage.getItem('admin_permissions') || '[]')
-    if (!permissions.includes(to.meta.permission)) {
-      ElMessage.error('没有权限访问此页面')
-      next('/dashboard')
-      return
+    // 获取用户信息，检查是否是超级管理员
+    // 使用角色 ID 判断，因为超级管理员角色 ID 通常是 1（固定不变）
+    // 使用 code 判断不可靠，因为 code 可能被修改
+    const userInfoStr = localStorage.getItem('admin_user_info')
+    let isSuperAdmin = false
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr)
+        // 检查用户角色中是否有超级管理员（角色 ID = 1）
+        if (userInfo.roles && Array.isArray(userInfo.roles)) {
+          isSuperAdmin = userInfo.roles.some((role: any) => role.id === 1)
+        }
+      } catch (e) {
+        console.error('解析用户信息失败:', e)
+      }
+    }
+    
+    // 超级管理员跳过权限检查
+    if (!isSuperAdmin) {
+      const permissions = JSON.parse(localStorage.getItem('admin_permissions') || '[]')
+      if (!permissions.includes(to.meta.permission)) {
+        ElMessage.error('没有权限访问此页面')
+        next('/dashboard')
+        return
+      }
     }
   }
   

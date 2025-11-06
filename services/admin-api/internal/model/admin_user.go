@@ -26,7 +26,7 @@ type AdminUser struct {
 
 // TableName 返回表名
 func (AdminUser) TableName() string {
-	return "admin_users"
+	return "gf_admin_users"
 }
 
 // AdminUserCreateRequest 创建用户请求

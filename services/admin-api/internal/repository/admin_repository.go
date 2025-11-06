@@ -29,10 +29,10 @@ func (r *UserRepository) GetByUsername(username string) (*model.AdminUser, error
 
 	// 手动加载角色，使用JOIN查询
 	var roles []model.AdminRole
-	err = r.db.Table("admin_roles").
-		Select("admin_roles.*").
-		Joins("JOIN admin_user_roles ON admin_roles.id = admin_user_roles.role_id").
-		Where("admin_user_roles.user_id = ?", user.ID).
+	err = r.db.Table("gf_admin_roles").
+		Select("gf_admin_roles.*").
+		Joins("JOIN gf_admin_user_roles ON gf_admin_roles.id = gf_admin_user_roles.role_id").
+		Where("gf_admin_user_roles.user_id = ?", user.ID).
 		Find(&roles).Error
 	if err != nil {
 		return nil, err
@@ -52,10 +52,10 @@ func (r *UserRepository) GetByEmail(email string) (*model.AdminUser, error) {
 
 	// 手动加载角色
 	var roles []model.AdminRole
-	err = r.db.Table("admin_roles").
-		Select("admin_roles.*").
-		Joins("JOIN admin_user_roles ON admin_roles.id = admin_user_roles.role_id").
-		Where("admin_user_roles.user_id = ?", user.ID).
+	err = r.db.Table("gf_admin_roles").
+		Select("gf_admin_roles.*").
+		Joins("JOIN gf_admin_user_roles ON gf_admin_roles.id = gf_admin_user_roles.role_id").
+		Where("gf_admin_user_roles.user_id = ?", user.ID).
 		Find(&roles).Error
 	if err != nil {
 		return nil, err
@@ -75,10 +75,10 @@ func (r *UserRepository) GetByID(id uint64) (*model.AdminUser, error) {
 
 	// 手动加载角色
 	var roles []model.AdminRole
-	err = r.db.Table("admin_roles").
-		Select("admin_roles.*").
-		Joins("JOIN admin_user_roles ON admin_roles.id = admin_user_roles.role_id").
-		Where("admin_user_roles.user_id = ?", user.ID).
+	err = r.db.Table("gf_admin_roles").
+		Select("gf_admin_roles.*").
+		Joins("JOIN gf_admin_user_roles ON gf_admin_roles.id = gf_admin_user_roles.role_id").
+		Where("gf_admin_user_roles.user_id = ?", user.ID).
 		Find(&roles).Error
 	if err != nil {
 		return nil, err
@@ -130,8 +130,8 @@ func (r *UserRepository) List(req *model.AdminUserListRequest) ([]model.AdminUse
 		query = query.Where("status = ?", *req.Status)
 	}
 	if req.RoleID != nil {
-		query = query.Joins("JOIN admin_user_roles ON admin_users.id = admin_user_roles.user_id").
-			Where("admin_user_roles.role_id = ?", *req.RoleID)
+		query = query.Joins("JOIN gf_admin_user_roles ON gf_admin_users.id = gf_admin_user_roles.user_id").
+			Where("gf_admin_user_roles.role_id = ?", *req.RoleID)
 	}
 
 	// 获取总数
@@ -148,10 +148,10 @@ func (r *UserRepository) List(req *model.AdminUserListRequest) ([]model.AdminUse
 	// 手动加载每个用户的角色
 	for i := range users {
 		var roles []model.AdminRole
-		err := r.db.Table("admin_roles").
-			Select("admin_roles.*").
-			Joins("JOIN admin_user_roles ON admin_roles.id = admin_user_roles.role_id").
-			Where("admin_user_roles.user_id = ?", users[i].ID).
+		err := r.db.Table("gf_admin_roles").
+			Select("gf_admin_roles.*").
+			Joins("JOIN gf_admin_user_roles ON gf_admin_roles.id = gf_admin_user_roles.role_id").
+			Where("gf_admin_user_roles.user_id = ?", users[i].ID).
 			Find(&roles).Error
 		if err != nil {
 			return nil, 0, err
@@ -215,10 +215,10 @@ func (r *RoleRepository) GetByID(id uint64) (*model.AdminRole, error) {
 
 	// 手动加载权限
 	var permissions []model.AdminPermission
-	err = r.db.Table("admin_permissions").
-		Select("admin_permissions.*").
-		Joins("JOIN admin_role_permissions ON admin_permissions.id = admin_role_permissions.permission_id").
-		Where("admin_role_permissions.role_id = ?", role.ID).
+	err = r.db.Table("gf_admin_permissions").
+		Select("gf_admin_permissions.*").
+		Joins("JOIN gf_admin_role_permissions ON gf_admin_permissions.id = gf_admin_role_permissions.permission_id").
+		Where("gf_admin_role_permissions.role_id = ?", role.ID).
 		Find(&permissions).Error
 	if err != nil {
 		return nil, err
@@ -227,10 +227,10 @@ func (r *RoleRepository) GetByID(id uint64) (*model.AdminRole, error) {
 
 	// 手动加载菜单
 	var menus []model.AdminMenu
-	err = r.db.Table("admin_menus").
-		Select("admin_menus.*").
-		Joins("JOIN admin_role_menus ON admin_menus.id = admin_role_menus.menu_id").
-		Where("admin_role_menus.role_id = ?", role.ID).
+	err = r.db.Table("gf_admin_menus").
+		Select("gf_admin_menus.*").
+		Joins("JOIN gf_admin_role_menus ON gf_admin_menus.id = gf_admin_role_menus.menu_id").
+		Where("gf_admin_role_menus.role_id = ?", role.ID).
 		Find(&menus).Error
 	if err != nil {
 		return nil, err
@@ -285,10 +285,10 @@ func (r *RoleRepository) List(req *model.AdminRoleListRequest) ([]model.AdminRol
 	for i := range roles {
 		// 加载权限
 		var permissions []model.AdminPermission
-		err := r.db.Table("admin_permissions").
-			Select("admin_permissions.*").
-			Joins("JOIN admin_role_permissions ON admin_permissions.id = admin_role_permissions.permission_id").
-			Where("admin_role_permissions.role_id = ?", roles[i].ID).
+		err := r.db.Table("gf_admin_permissions").
+			Select("gf_admin_permissions.*").
+			Joins("JOIN gf_admin_role_permissions ON gf_admin_permissions.id = gf_admin_role_permissions.permission_id").
+			Where("gf_admin_role_permissions.role_id = ?", roles[i].ID).
 			Find(&permissions).Error
 		if err != nil {
 			return nil, 0, err
@@ -297,10 +297,10 @@ func (r *RoleRepository) List(req *model.AdminRoleListRequest) ([]model.AdminRol
 
 		// 加载菜单
 		var menus []model.AdminMenu
-		err = r.db.Table("admin_menus").
-			Select("admin_menus.*").
-			Joins("JOIN admin_role_menus ON admin_menus.id = admin_role_menus.menu_id").
-			Where("admin_role_menus.role_id = ?", roles[i].ID).
+		err = r.db.Table("gf_admin_menus").
+			Select("gf_admin_menus.*").
+			Joins("JOIN gf_admin_role_menus ON gf_admin_menus.id = gf_admin_role_menus.menu_id").
+			Where("gf_admin_role_menus.role_id = ?", roles[i].ID).
 			Find(&menus).Error
 		if err != nil {
 			return nil, 0, err

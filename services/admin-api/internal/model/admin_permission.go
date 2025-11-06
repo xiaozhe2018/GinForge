@@ -17,12 +17,12 @@ type AdminPermission struct {
 	DeletedAt   *time.Time `json:"deleted_at" gorm:"index"`
 
 	// 关联
-	Roles []AdminRole `json:"roles,omitempty" gorm:"many2many:admin_role_permissions;"`
+	Roles []AdminRole `json:"roles,omitempty" gorm:"many2many:gf_admin_role_permissions;"`
 }
 
 // TableName 返回表名
 func (AdminPermission) TableName() string {
-	return "admin_permissions"
+	return "gf_admin_permissions"
 }
 
 // AdminPermissionCreateRequest 创建权限请求

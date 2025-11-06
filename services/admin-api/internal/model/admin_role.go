@@ -24,7 +24,7 @@ type AdminRole struct {
 
 // TableName 返回表名
 func (AdminRole) TableName() string {
-	return "admin_roles"
+	return "gf_admin_roles"
 }
 
 // AdminRoleCreateRequest 创建角色请求

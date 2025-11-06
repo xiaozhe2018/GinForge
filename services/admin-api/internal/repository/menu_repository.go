@@ -83,9 +83,9 @@ func (r *MenuRepository) GetTree() ([]model.AdminMenu, error) {
 // GetTreeByRoleID 根据角色ID获取菜单树
 func (r *MenuRepository) GetTreeByRoleID(roleID uint64) ([]model.AdminMenu, error) {
 	var menus []model.AdminMenu
-	err := r.db.Joins("JOIN admin_role_menus ON admin_menus.id = admin_role_menus.menu_id").
-		Where("admin_role_menus.role_id = ? AND admin_menus.status = ?", roleID, 1).
-		Order("admin_menus.sort ASC, admin_menus.created_at ASC").
+	err := r.db.Joins("JOIN gf_admin_role_menus ON gf_admin_menus.id = gf_admin_role_menus.menu_id").
+		Where("gf_admin_role_menus.role_id = ? AND gf_admin_menus.status = ?", roleID, 1).
+		Order("gf_admin_menus.sort ASC, gf_admin_menus.created_at ASC").
 		Find(&menus).Error
 	if err != nil {
 		return nil, err

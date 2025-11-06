@@ -19,7 +19,7 @@ type AdminSystemConfig struct {
 
 // TableName 返回表名
 func (AdminSystemConfig) TableName() string {
-	return "admin_system_configs"
+	return "gf_admin_system_configs"
 }
 
 // AdminOperationLog 操作日志模型
@@ -40,7 +40,7 @@ type AdminOperationLog struct {
 
 // TableName 返回表名
 func (AdminOperationLog) TableName() string {
-	return "admin_operation_logs"
+	return "gf_admin_operation_logs"
 }
 
 // AdminSystemInfo 系统信息响应

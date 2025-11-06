@@ -1,40 +1,61 @@
 # GinForge 管理后台
 
-基于 Vue3 + Element Plus 的现代化管理后台界面。
+<div align="center">
 
-## 🚀 快速开始
+**🎨 基于 Vue3 + Element Plus 的现代化企业级管理后台**
 
-### 环境要求
-- Node.js 16+
-- npm 或 yarn
+[![Vue](https://img.shields.io/badge/Vue-3.3+-42b883?logo=vue.js)](https://vuejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6?logo=typescript)](https://www.typescriptlang.org/)
+[![Element Plus](https://img.shields.io/badge/Element_Plus-2.4+-409eff)](https://element-plus.org/)
+[![Vite](https://img.shields.io/badge/Vite-4.4+-646cff?logo=vite)](https://vitejs.dev/)
 
-### 安装依赖
+</div>
+
+---
+
+## 🚀 30秒快速启动
+
 ```bash
-cd web/admin
+# 1. 安装依赖
 npm install
-```
 
-### 开发模式
-```bash
+# 2. 启动开发服务器
 npm run dev
+
+# 3. 访问 http://localhost:3000
+# 默认账号：admin / admin123
 ```
 
-访问 http://localhost:3000
+## ✨ 核心功能
 
-### 构建生产版本
-```bash
-npm run build
-```
+| 模块 | 功能 |
+|------|------|
+| 👤 **用户管理** | 用户CRUD、角色分配、状态管理 |
+| 🔐 **角色管理** | 角色CRUD、权限分配、层级管理 |
+| 📋 **菜单管理** | 树形菜单、动态路由、图标配置 |
+| 🔑 **权限管理** | 细粒度权限、资源管理、按钮控制 |
+| ⚙️ **系统管理** | 实时监控、配置中心、日志管理 |
+| 👨‍💼 **个人设置** | 基本信息、安全设置、活动记录 |
+| 📊 **仪表盘** | 数据统计、图表展示、快捷入口 |
+
+## 🛠️ 技术栈
+
+- **Vue 3** - 渐进式JavaScript框架
+- **TypeScript** - 类型安全的JavaScript
+- **Element Plus** - Vue 3 企业级UI组件库
+- **Vite** - 下一代前端构建工具
+- **Vue Router** - 官方路由管理器
+- **Axios** - HTTP请求库
 
 ## 📁 项目结构
 
 ```
 web/admin/
 ├── src/
-│   ├── api/           # API接口
-│   ├── layout/        # 布局组件
-│   ├── router/        # 路由配置
-│   ├── views/         # 页面组件
+│   ├── api/           # 📡 API接口层
+│   ├── layout/        # 🎨 布局组件
+│   ├── router/        # 🛣️ 路由配置
+│   ├── views/         # 📄 页面组件
 │   ├── App.vue        # 根组件
 │   └── main.ts        # 入口文件
 ├── public/            # 静态资源
@@ -42,51 +63,94 @@ web/admin/
 └── vite.config.ts     # Vite配置
 ```
 
-## 🎯 功能特性
+## 📦 开发命令
 
-- **现代化UI**: 基于 Element Plus 的专业管理界面
-- **响应式设计**: 支持桌面端和移动端
-- **权限管理**: 完整的用户、角色、菜单、权限管理体系
-- **系统监控**: 实时系统状态监控和日志管理
-- **个人设置**: 用户个人信息和账户安全设置
+```bash
+# 安装依赖
+npm install
 
-## 🔧 技术栈
+# 启动开发服务器
+npm run dev
 
-- **Vue 3**: 渐进式JavaScript框架
-- **Element Plus**: Vue 3 UI组件库
-- **Vite**: 快速构建工具
-- **TypeScript**: 类型安全的JavaScript
-- **Vue Router**: 官方路由管理器
-- **Pinia**: 状态管理库
+# 构建生产版本
+npm run build
 
-## 📝 开发指南
+# 预览生产构建
+npm run preview
+```
 
-### 添加新页面
-1. 在 `src/views/` 下创建页面组件
-2. 在 `src/router/index.ts` 中添加路由
-3. 在 `src/layout/index.vue` 中添加菜单项
+## 📖 完整文档
 
-### API接口
-- 所有API接口定义在 `src/api/` 目录下
-- 使用统一的请求拦截器处理认证和错误
+**👉 查看详细文档：[docs/ADMIN_GUIDE.md](../../docs/ADMIN_GUIDE.md)**
 
-### 样式规范
-- 使用 Element Plus 组件库
-- 遵循 BEM CSS 命名规范
-- 支持响应式设计
+文档包含：
+- 📚 **快速开始** - 环境搭建、快速启动
+- 🎯 **核心功能** - 所有模块的详细说明
+- 🏗️ **技术架构** - 项目结构、核心设计
+- 🔧 **开发指南** - 添加页面、API接口、自定义主题
+- 📦 **部署上线** - Docker、Nginx、CDN部署
+- 🐛 **常见问题** - 常见问题解答和解决方案
+
+## 🎨 一键生成CRUD
+
+使用代码生成器快速创建管理页面：
+
+```bash
+# 在项目根目录执行
+go run ./cmd/generator gen:crud --table=articles
+
+# 自动生成：
+# ✅ API接口：src/api/articles.ts
+# ✅ 列表页面：src/views/Articles/index.vue
+# ✅ 表单页面：src/views/Articles/Form.vue
+```
 
 ## 🚀 部署
 
-### 构建
+### Docker 部署（推荐）
+
 ```bash
-npm run build
+# 在项目根目录
+docker-compose up -d
 ```
 
-### 部署到Nginx
-将 `dist` 目录内容复制到Nginx静态文件目录，配置反向代理到后端API。
+### 手动部署
 
-## 📞 支持
+```bash
+# 1. 构建
+npm run build
 
-如有问题，请查看项目文档或提交Issue。
+# 2. 上传 dist/ 到服务器
+# 3. 配置 Nginx 反向代理
+```
+
+详细部署指南请查看 [完整文档](../../docs/ADMIN_GUIDE.md#-部署上线)
+
+## 🐛 故障排查
+
+| 问题 | 解决方案 |
+|------|---------|
+| 页面空白 | 检查后端服务是否启动 |
+| 登录失败 | 确认 Token 正确存储 |
+| API跨域 | 检查 vite.config.ts 代理配置 |
+| 样式异常 | 确认 Element Plus 样式已引入 |
+
+更多问题请查看 [常见问题文档](../../docs/ADMIN_GUIDE.md#-常见问题)
+
+## 📞 技术支持
+
+- 📖 [完整文档](../../docs/ADMIN_GUIDE.md)
+- 🐛 [报告问题](https://github.com/xiaozhe2018/GinForge/issues)
+- 💬 [参与讨论](https://github.com/xiaozhe2018/GinForge/discussions)
+
+---
+
+<div align="center">
+
+**让开发更加简单！** 🚀
+
+[返回项目首页](../../README.md) • [查看完整文档](../../docs/ADMIN_GUIDE.md)
+
+</div>
 
 
