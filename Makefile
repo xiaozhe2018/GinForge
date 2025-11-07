@@ -199,7 +199,7 @@ DB_PASS := $(or $(GINFORGE_DATABASE_PASSWORD),$(shell grep -A 10 "^database:" co
 db-init:
 	@echo "开始初始化数据库..."
 	@if [ -z "$(DB_HOST)" ] || [ -z "$(DB_NAME)" ] || [ -z "$(DB_USER)" ] || [ -z "$(DB_PASS)" ]; then \
-		echo "❌ 无法读取数据库配置"; \
+		echo "无法读取数据库配置"; \
 		echo "请设置环境变量（推荐）或确保 configs/config.yaml 包含 database 配置"; \
 		echo ""; \
 		echo "方式1：设置环境变量"; \
@@ -216,17 +216,37 @@ db-init:
 	@echo "主机: $(DB_HOST):$(DB_PORT)"
 	@echo "用户: $(DB_USER)"
 	@echo ""
-	@echo "创建数据库（如果不存在）..."
-	@MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -e "CREATE DATABASE IF NOT EXISTS $(DB_NAME) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || \
-		echo "⚠️  无法创建数据库，请检查 MySQL 连接"
-	@echo "执行数据库初始化脚本..."
-	@if [ -f "database/migrations/init.sql" ]; then \
-		echo "  → init.sql"; \
-		MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) $(DB_NAME) < database/migrations/init.sql 2>/dev/null || \
-		(echo "     执行失败，请检查 SQL 文件"; exit 1); \
+	@echo "检测 MySQL 连接方式..."
+	@MYSQL_CONTAINER=$$(docker ps --format "{{.Names}}" | grep -i mysql | head -n1); \
+	if [ -n "$$MYSQL_CONTAINER" ]; then \
+		echo "检测到 Docker MySQL 容器: $$MYSQL_CONTAINER"; \
+		echo "使用 Docker 方式执行..."; \
+		echo "创建数据库（如果不存在）..."; \
+		docker exec $$MYSQL_CONTAINER mysql -u$(DB_USER) -p$(DB_PASS) -e "CREATE DATABASE IF NOT EXISTS $(DB_NAME) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || \
+		(echo "无法创建数据库，请检查 MySQL 连接"; exit 1); \
+		echo "执行数据库初始化脚本..."; \
+		if [ -f "database/migrations/init.sql" ]; then \
+			echo "  → init.sql"; \
+			docker exec -i $$MYSQL_CONTAINER mysql -u$(DB_USER) -p$(DB_PASS) $(DB_NAME) < database/migrations/init.sql 2>/dev/null || \
+			(echo "     执行失败，请检查 SQL 文件"; exit 1); \
+		else \
+			echo "     初始化脚本不存在: database/migrations/init.sql"; \
+			exit 1; \
+		fi; \
 	else \
-		echo "     初始化脚本不存在: database/migrations/init.sql"; \
-		exit 1; \
+		echo "使用本地 MySQL 客户端..."; \
+		echo "创建数据库（如果不存在）..."; \
+		MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -e "CREATE DATABASE IF NOT EXISTS $(DB_NAME) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || \
+		(echo "无法创建数据库，请检查 MySQL 连接"; exit 1); \
+		echo "执行数据库初始化脚本..."; \
+		if [ -f "database/migrations/init.sql" ]; then \
+			echo "  → init.sql"; \
+			MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) $(DB_NAME) < database/migrations/init.sql 2>/dev/null || \
+			(echo "     执行失败，请检查 SQL 文件"; exit 1); \
+		else \
+			echo "     初始化脚本不存在: database/migrations/init.sql"; \
+			exit 1; \
+		fi; \
 	fi
 	@echo ""
 	@echo "数据库初始化完成！"
@@ -238,7 +258,7 @@ db-reset:
 		echo " 无法从配置文件读取数据库名称"; \
 		exit 1; \
 	fi
-	@echo "⚠️  警告: 这将删除数据库 $(DB_NAME) 并重新创建！"
+	@echo "警告: 这将删除数据库 $(DB_NAME) 并重新创建！"
 	@echo -n "确认继续? (y/N): " && read confirm && [ "$$confirm" = "y" ] || exit 1
 	@echo "删除数据库..."
 	@MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) -e "DROP DATABASE IF EXISTS $(DB_NAME);" 2>/dev/null || true
@@ -255,5 +275,5 @@ db-status:
 	@echo "  用户: $(DB_USER)"
 	@echo ""
 	@echo "数据库表列表:"
-	@MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) $(DB_NAME) -e "SHOW TABLES;" 2>/dev/null || echo "❌ 无法连接到数据库，请检查配置"
+	@MYSQL_PWD=$(DB_PASS) mysql -h$(DB_HOST) -P$(DB_PORT) -u$(DB_USER) $(DB_NAME) -e "SHOW TABLES;" 2>/dev/null || echo "无法连接到数据库，请检查配置"
 
