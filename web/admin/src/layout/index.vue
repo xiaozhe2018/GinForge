@@ -2,9 +2,9 @@
   <div class="admin-layout">
     <!-- 侧边栏 -->
     <el-aside :width="isCollapse ? '64px' : '200px'" class="sidebar">
-      <div class="logo">
-        <img v-if="!isCollapse" src="/logo.svg" alt="GinForge" />
-        <img v-else src="/logo.svg" alt="GF" class="logo-mini" />
+      <div class="logo" @click="router.push('/dashboard')">
+        <span v-if="!isCollapse" class="logo-text">{{ systemName }}</span>
+        <span v-else class="logo-text-mini">{{ systemNameShort }}</span>
       </div>
       
       <el-menu
@@ -55,11 +55,11 @@
           <el-icon><Reading /></el-icon>
           <span>文档中心</span>
         </el-menu-item>
-          <!-- Articles管理 -->
-          <el-menu-item index="/dashboard/articleses">
-            <el-icon><Document /></el-icon>
-            <span>Articles管理</span>
-          </el-menu-item>
+        <!-- Articles管理 -->
+        <el-menu-item index="/dashboard/articleses">
+          <el-icon><Document /></el-icon>
+          <span>Articles管理</span>
+        </el-menu-item>
 
 
       </el-menu>
@@ -132,6 +132,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout } from '@/api/auth'
 import NotificationCenter from '@/components/NotificationCenter.vue'
+import { useSystemStore } from '@/stores/system'
 import {
   House,
   User,
@@ -143,14 +144,50 @@ import {
   Fold,
   Expand,
   ArrowDown,
-  SwitchButton
+  SwitchButton,
+  Document
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
+const systemStore = useSystemStore()
 
 // 侧边栏折叠状态
 const isCollapse = ref(false)
+
+// 系统名称
+const systemName = computed(() => {
+  return systemStore.systemName || 'GinForge 管理后台'
+})
+
+// 系统名称简写（取首字母或前两个字符）
+const systemNameShort = computed(() => {
+  const name = systemName.value.trim()
+  if (name.length <= 2) {
+    return name
+  }
+  
+  // 优先提取中文字符的第一个字
+  const chineseMatch = name.match(/[\u4e00-\u9fa5]/)
+  if (chineseMatch) {
+    return chineseMatch[0]
+  }
+  
+  // 提取英文字母，如果有多个单词，取每个单词的首字母
+  const words = name.match(/[A-Za-z]+/g)
+  if (words && words.length > 0) {
+    if (words.length === 1) {
+      // 单个单词，取前2个字母
+      return words[0].substring(0, 2).toUpperCase()
+    } else {
+      // 多个单词，取每个单词的首字母
+      return words.map(w => w[0].toUpperCase()).join('').substring(0, 2)
+    }
+  }
+  
+  // 默认取前2个字符
+  return name.substring(0, 2).toUpperCase()
+})
 
 // 用户信息
 const userInfo = ref({
@@ -180,6 +217,11 @@ const toggleCollapse = () => {
 
 // 加载用户信息
 onMounted(() => {
+  // 加载系统信息
+  if (!systemStore.loaded) {
+    systemStore.loadSystemInfo()
+  }
+  
   const savedUserInfo = localStorage.getItem('admin_user_info')
   if (savedUserInfo) {
     try {
@@ -263,14 +305,30 @@ watch(route, () => {
   justify-content: center;
   background-color: #2b3a4b;
   border-bottom: 1px solid #434a50;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.logo img {
-  height: 32px;
+.logo:hover {
+  background-color: #263445;
 }
 
-.logo-mini {
-  height: 24px;
+.logo-text {
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+}
+
+.logo-text-mini {
+  color: #fff;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 2px;
 }
 
 .sidebar-menu {
