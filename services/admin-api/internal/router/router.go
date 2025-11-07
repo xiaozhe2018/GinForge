@@ -72,6 +72,7 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 
 	// 无需认证的路由
 	api.POST("/login", adminAuthHandler.Login)
+	api.GET("/system/basic-info", adminSystemHandler.GetSystemBasicInfo) // 获取系统基本信息（公开接口）
 
 	// 需要认证的路由
 	auth := api.Group("")
@@ -88,6 +89,7 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.POST("/users", adminUserHandler.CreateUser)
 	auth.PUT("/users/:id", adminUserHandler.UpdateUser)
 	auth.PUT("/users/:id/status", adminUserHandler.UpdateUserStatus)
+	auth.PUT("/users/:id/reset-password", adminUserHandler.ResetPassword)
 	auth.DELETE("/users/:id", adminUserHandler.DeleteUser)
 	auth.POST("/logout", adminAuthHandler.Logout)
 	auth.GET("/profile", adminAuthHandler.GetProfile)

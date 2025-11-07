@@ -72,10 +72,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" @click="handleEdit(row)">
               编辑
+            </el-button>
+            <el-button type="info" size="small" @click="handleResetPassword(row)">
+              修改密码
             </el-button>
             <el-button
               :type="row.status === 1 ? 'warning' : 'success'"
@@ -167,6 +170,47 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 修改密码对话框 -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="修改密码"
+      width="500px"
+      @close="handlePasswordDialogClose"
+    >
+      <el-form
+        ref="passwordFormRef"
+        :model="passwordForm"
+        :rules="passwordRules"
+        label-width="100px"
+      >
+        <el-form-item label="用户名">
+          <el-input v-model="passwordForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="新密码" prop="password">
+          <el-input
+            v-model="passwordForm.password"
+            type="password"
+            placeholder="请输入新密码（6-20位）"
+            show-password
+          />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
+            show-password
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passwordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handlePasswordSubmit" :loading="passwordSubmitting">
+          {{ passwordSubmitting ? '保存中...' : '确定' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -201,6 +245,17 @@ const selectedUsers = ref<any[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const submitting = ref(false)
+
+// 修改密码对话框
+const passwordDialogVisible = ref(false)
+const passwordSubmitting = ref(false)
+const passwordFormRef = ref()
+const passwordForm = reactive({
+  id: null as number | null,
+  username: '',
+  password: '',
+  confirmPassword: ''
+})
 
 // 用户表单
 const userForm = reactive({
@@ -237,6 +292,28 @@ const userRules = {
   ],
   role_ids: [
     { required: true, message: '请选择至少一个角色', trigger: 'change', type: 'array' }
+  ]
+}
+
+// 密码表单验证规则
+const validateConfirmPassword = (rule: any, value: any, callback: any) => {
+  if (value === '') {
+    callback(new Error('请再次输入密码'))
+  } else if (value !== passwordForm.password) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const passwordRules = {
+  password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { validator: validateConfirmPassword, trigger: 'blur' }
   ]
 }
 
@@ -417,6 +494,49 @@ const resetUserForm = () => {
     role_ids: []
   })
   userFormRef.value?.clearValidate()
+}
+
+// 修改密码
+const handleResetPassword = (row: any) => {
+  passwordDialogVisible.value = true
+  Object.assign(passwordForm, {
+    id: row.id,
+    username: row.username,
+    password: '',
+    confirmPassword: ''
+  })
+}
+
+// 提交密码修改
+const handlePasswordSubmit = async () => {
+  if (!passwordFormRef.value) return
+  
+  try {
+    await passwordFormRef.value.validate()
+    passwordSubmitting.value = true
+    
+    if (passwordForm.id) {
+      await userApi.resetUserPassword(passwordForm.id, passwordForm.password)
+      ElMessage.success('密码修改成功')
+      passwordDialogVisible.value = false
+    }
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error('修改密码失败')
+  } finally {
+    passwordSubmitting.value = false
+  }
+}
+
+// 关闭密码对话框
+const handlePasswordDialogClose = () => {
+  Object.assign(passwordForm, {
+    id: null,
+    username: '',
+    password: '',
+    confirmPassword: ''
+  })
+  passwordFormRef.value?.clearValidate()
 }
 
 onMounted(() => {

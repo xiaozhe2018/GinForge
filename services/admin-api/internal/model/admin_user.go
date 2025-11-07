@@ -48,6 +48,11 @@ type AdminUserUpdateRequest struct {
 	RoleIDs []uint64 `json:"role_ids" binding:"required"`
 }
 
+// AdminUserResetPasswordRequest 管理员重置用户密码请求
+type AdminUserResetPasswordRequest struct {
+	Password string `json:"password" binding:"required,min=6,max=20"`
+}
+
 // AdminUserListRequest 用户列表请求
 type AdminUserListRequest struct {
 	Page     int     `form:"page"`                        // 页码，不传时使用默认值1

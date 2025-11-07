@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
 	"goweb/pkg/base"
 	"goweb/pkg/logger"
 	"goweb/pkg/notification"
@@ -10,24 +9,39 @@ import (
 	"goweb/services/admin-api/internal/service"
 	"net/http"
 	"runtime"
+
+	"github.com/gin-gonic/gin"
 )
 
 // AdminSystemHandler 系统管理处理器
 type AdminSystemHandler struct {
 	*base.BaseHandler
-	systemService   *service.AdminSystemService
-	notifyService   *notification.Service
-	logger          logger.Logger
+	systemService *service.AdminSystemService
+	notifyService *notification.Service
+	logger        logger.Logger
 }
 
 // NewAdminSystemHandler 创建系统管理处理器
 func NewAdminSystemHandler(systemService *service.AdminSystemService, notifyService *notification.Service, log logger.Logger) *AdminSystemHandler {
 	return &AdminSystemHandler{
-		BaseHandler:    base.NewBaseHandler(log),
-		systemService:  systemService,
-		notifyService:  notifyService,
-		logger:         log,
+		BaseHandler:   base.NewBaseHandler(log),
+		systemService: systemService,
+		notifyService: notifyService,
+		logger:        log,
 	}
+}
+
+// GetSystemBasicInfo 获取系统基本信息（公开接口，不需要认证）
+// @Summary 获取系统基本信息
+// @Description 获取系统名称、版本、描述等基本信息，用于登录页面等公开场景
+// @Tags 系统管理
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.Response{data=map[string]string}
+// @Router /api/v1/admin/system/basic-info [get]
+func (h *AdminSystemHandler) GetSystemBasicInfo(c *gin.Context) {
+	info := h.systemService.GetSystemBasicInfo(c.Request.Context())
+	response.Success(c, info)
 }
 
 // GetSystemInfo 获取系统信息
@@ -354,7 +368,7 @@ func (h *AdminSystemHandler) GetRuntimeInfo(c *gin.Context) {
 // @Router /api/v1/admin/system/health [get]
 func (h *AdminSystemHandler) HealthCheck(c *gin.Context) {
 	health := h.systemService.CheckHealth(c.Request.Context())
-	
+
 	if health["status"] == "healthy" {
 		c.JSON(http.StatusOK, health)
 	} else {

@@ -393,7 +393,7 @@ func (s *UserService) DeleteUser(id uint64) error {
 	return s.userRepo.Delete(id)
 }
 
-// ChangePassword 修改密码
+// ChangePassword 修改密码（需要验证旧密码）
 func (s *UserService) ChangePassword(userID uint64, req *model.ChangePasswordRequest) error {
 	// 获取用户
 	user, err := s.userRepo.GetByID(userID)
@@ -416,6 +416,33 @@ func (s *UserService) ChangePassword(userID uint64, req *model.ChangePasswordReq
 
 	// 加密新密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	// 更新密码
+	user.Password = string(hashedPassword)
+	return s.userRepo.Update(user)
+}
+
+// ResetPassword 重置用户密码（管理员操作，不需要旧密码）
+func (s *UserService) ResetPassword(userID uint64, req *model.AdminUserResetPasswordRequest) error {
+	// 获取用户
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return err
+	}
+
+	// 验证新密码是否符合安全策略（从数据库配置读取）
+	if s.systemService != nil {
+		ctx := context.Background()
+		if err := s.systemService.ValidatePassword(ctx, req.Password); err != nil {
+			return err
+		}
+	}
+
+	// 加密新密码
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}

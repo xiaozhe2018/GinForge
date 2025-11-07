@@ -67,6 +67,11 @@ export interface SystemLogListResponse {
   total: number
 }
 
+// 获取系统基本信息（公开接口，不需要登录）
+export const getSystemBasicInfo = () => {
+  return request.get<Record<string, string>>('/api/v1/admin/system/basic-info')
+}
+
 // 获取系统信息
 export const getSystemInfo = () => {
   return request.get<SystemInfo>('/api/v1/admin/system/info')

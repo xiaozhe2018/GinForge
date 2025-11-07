@@ -96,6 +96,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("database.password", "")
 	v.SetDefault("database.charset", "utf8mb4")
 	v.SetDefault("database.timezone", "Asia/Shanghai")
+	v.SetDefault("database.table_prefix", "gf_") // 默认表前缀
 	v.SetDefault("database.max_idle_conns", 10)
 	v.SetDefault("database.max_open_conns", 100)
 	v.SetDefault("database.conn_max_lifetime", "1h")
@@ -277,6 +278,7 @@ type DatabaseConfig struct {
 	Password        string        `yaml:"password" json:"password"`
 	Charset         string        `yaml:"charset" json:"charset"`
 	Timezone        string        `yaml:"timezone" json:"timezone"`
+	TablePrefix     string        `yaml:"table_prefix" json:"table_prefix"` // 数据表前缀
 	MaxIdleConns    int           `yaml:"max_idle_conns" json:"max_idle_conns"`
 	MaxOpenConns    int           `yaml:"max_open_conns" json:"max_open_conns"`
 	ConnMaxLifetime time.Duration `yaml:"conn_max_lifetime" json:"conn_max_lifetime"`
@@ -304,7 +306,25 @@ type RedisConfig struct {
 func (c *Config) GetDatabaseConfig() DatabaseConfig {
 	var config DatabaseConfig
 	c.Unmarshal("database", &config)
+
+	// 如果表前缀为空，使用默认值
+	if config.TablePrefix == "" {
+		config.TablePrefix = c.GetString("database.table_prefix")
+		if config.TablePrefix == "" {
+			config.TablePrefix = "gf_" // 最终默认值
+		}
+	}
+
 	return config
+}
+
+// GetTablePrefix 获取数据表前缀
+func (c *Config) GetTablePrefix() string {
+	prefix := c.GetString("database.table_prefix")
+	if prefix == "" {
+		return "gf_" // 默认表前缀
+	}
+	return prefix
 }
 
 // GetRedisConfig 获取Redis配置

@@ -300,7 +300,12 @@ INSERT INTO `gf_admin_permissions` (`name`, `code`, `type`, `description`, `stat
 ('权限删除', 'permission:delete', 'api', '删除权限', 1),
 -- 系统管理权限
 ('系统查看', 'system:read', 'api', '查看系统信息', 1),
-('系统配置', 'system:config', 'api', '系统配置管理', 1)
+('系统配置', 'system:config', 'api', '系统配置管理', 1),
+-- 文章管理权限
+('文章查看', 'article:read', 'api', '查看文章列表', 1),
+('文章创建', 'article:create', 'api', '创建新文章', 1),
+('文章编辑', 'article:update', 'api', '编辑文章信息', 1),
+('文章删除', 'article:delete', 'api', '删除文章', 1)
 ON DUPLICATE KEY UPDATE `code`=`code`;
 
 -- 插入默认菜单（先插入一级菜单）
@@ -311,7 +316,8 @@ INSERT INTO `gf_admin_menus` (`parent_id`, `name`, `code`, `type`, `path`, `comp
 (0, '角色管理', 'role_management', 'directory', '', '', 'UserFilled', 3, 1, 1, '角色管理模块'),
 (0, '菜单管理', 'menu_management', 'directory', '', '', 'Menu', 4, 1, 1, '菜单管理模块'),
 (0, '权限管理', 'permission_management', 'menu', '/dashboard/permissions', 'Permissions', 'Key', 5, 1, 1, '权限管理'),
-(0, '系统管理', 'system_management', 'menu', '/dashboard/system', 'System', 'Setting', 6, 1, 1, '系统管理')
+(0, '系统管理', 'system_management', 'menu', '/dashboard/system', 'System', 'Setting', 6, 1, 1, '系统管理'),
+(0, '文章管理', 'articles_management', 'menu', '/dashboard/articleses', 'Articles', 'Document', 7, 1, 1, '文章管理')
 ON DUPLICATE KEY UPDATE `code`=`code`;
 
 -- 插入二级菜单（需要先获取一级菜单ID）

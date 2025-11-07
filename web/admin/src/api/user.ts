@@ -84,3 +84,8 @@ export const updateUserStatus = (id: number, status: number) => {
 export const deleteUser = (id: number) => {
   return request.delete(`/api/v1/admin/users/${id}`)
 }
+
+// 重置用户密码
+export const resetUserPassword = (id: number, password: string) => {
+  return request.put(`/api/v1/admin/users/${id}/reset-password`, { password })
+}

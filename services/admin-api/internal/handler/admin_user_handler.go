@@ -241,3 +241,42 @@ func (h *AdminUserHandler) DeleteUser(c *gin.Context) {
 
 	response.Success(c, gin.H{"message": "删除成功"})
 }
+
+// ResetPassword 重置用户密码
+// @Summary 重置用户密码
+// @Description 管理员重置指定用户的密码（不需要旧密码）
+// @Tags 用户管理
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Param request body model.AdminUserResetPasswordRequest true "重置密码请求"
+// @Success 200 {object} response.Response "重置成功"
+// @Failure 400 {object} response.Response "请求参数错误"
+// @Failure 401 {object} response.Response "未授权"
+// @Failure 500 {object} response.Response "服务器内部错误"
+// @Router /admin/users/{id}/reset-password [put]
+func (h *AdminUserHandler) ResetPassword(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		response.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	var req model.AdminUserResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("bind reset password request error", err)
+		response.BadRequest(c, "请求参数错误")
+		return
+	}
+
+	// 调用服务层重置密码
+	if err := h.userService.ResetPassword(id, &req); err != nil {
+		h.logger.Error("reset password error", err)
+		response.InternalError(c, err.Error())
+		return
+	}
+
+	response.Success(c, gin.H{"message": "密码重置成功"})
+}

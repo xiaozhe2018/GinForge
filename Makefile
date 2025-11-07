@@ -1,6 +1,6 @@
 # GinForge 微服务框架 Makefile
 
-.PHONY: help build run stop restart status test clean swagger docker compose init db-init db-reset db-status
+.PHONY: help build run stop restart status test clean swagger docker compose init generate-config db-init db-reset db-status
 
 # 默认目标
 help:
@@ -17,10 +17,16 @@ help:
 	@echo "  make compose   - 启动 Docker Compose"
 	@echo ""
 	@echo "数据库命令:"
-	@echo "  make init     - 初始化数据库（推荐，等同于 make db-init）"
-	@echo "  make db-init   - 初始化数据库（执行所有迁移文件）"
-	@echo "  make db-reset  - 重置数据库（删除并重新创建）"
-	@echo "  make db-status - 查看数据库状态"
+	@echo "  make init           - 初始化数据库（推荐：生成配置文件 + 初始化数据库）"
+	@echo "  make generate-config - 从 .env 生成 configs/config.yaml"
+	@echo "  make db-init        - 初始化数据库（执行所有迁移文件）"
+	@echo "  make db-reset       - 重置数据库（删除并重新创建）"
+	@echo "  make db-status      - 查看数据库状态"
+	@echo ""
+	@echo "配置说明:"
+	@echo "  1. 复制 env.example 为 .env: cp env.example .env"
+	@echo "  2. 修改 .env 文件中的配置"
+	@echo "  3. 运行 make init 生成配置文件并初始化数据库"
 
 # 构建所有服务
 build:
@@ -184,32 +190,45 @@ dev-full: swagger run web-dev
 # 数据库管理命令
 # ============================================
 
-# 初始化数据库（别名，推荐使用）
-init: db-init
-	@echo " 数据库初始化完成！"
+# 生成配置文件（从 .env 生成 configs/config.yaml）
+generate-config:
+	@echo "生成配置文件..."
+	@if [ ! -f .env ]; then \
+		echo "错误: .env 文件不存在"; \
+		echo ""; \
+		echo "请先复制 env.example 为 .env 并修改配置:"; \
+		echo "  cp env.example .env"; \
+		echo "  vim .env"; \
+		exit 1; \
+	fi
+	@go run scripts/generate-config.go
 
-# 从环境变量读取数据库信息（优先），如果没有则从配置文件读取
-DB_HOST := $(or $(GINFORGE_DATABASE_HOST),$(shell grep -A 10 "^database:" configs/config.yaml | grep "^  host:" | awk '{print $$2}' | tr -d '"'))
-DB_PORT := $(or $(GINFORGE_DATABASE_PORT),$(shell grep -A 10 "^database:" configs/config.yaml | grep "^  port:" | awk '{print $$2}'))
-DB_NAME := $(or $(GINFORGE_DATABASE_DATABASE),$(shell grep -A 10 "^database:" configs/config.yaml | grep "^  database:" | awk '{print $$2}' | tr -d '"'))
-DB_USER := $(or $(GINFORGE_DATABASE_USERNAME),$(shell grep -A 10 "^database:" configs/config.yaml | grep "^  username:" | awk '{print $$2}' | tr -d '"'))
-DB_PASS := $(or $(GINFORGE_DATABASE_PASSWORD),$(shell grep -A 10 "^database:" configs/config.yaml | grep "^  password:" | awk '{print $$2}' | tr -d '"'))
+# 初始化数据库（别名，推荐使用）
+# 步骤：1. 生成配置文件  2. 初始化数据库
+init: generate-config db-init
+	@echo ""
+	@echo "✓ 数据库初始化完成！"
+
+# 从配置文件读取数据库信息
+DB_HOST := $(shell grep -A 10 "^database:" configs/config.yaml | grep "^  host:" | awk '{print $$2}' | tr -d '"')
+DB_PORT := $(shell grep -A 10 "^database:" configs/config.yaml | grep "^  port:" | awk '{print $$2}')
+DB_NAME := $(shell grep -A 10 "^database:" configs/config.yaml | grep "^  database:" | awk '{print $$2}' | tr -d '"')
+DB_USER := $(shell grep -A 10 "^database:" configs/config.yaml | grep "^  username:" | awk '{print $$2}' | tr -d '"')
+DB_PASS := $(shell grep -A 10 "^database:" configs/config.yaml | grep "^  password:" | awk '{print $$2}' | tr -d '"')
 
 # 初始化数据库（执行所有迁移文件）
 db-init:
 	@echo "开始初始化数据库..."
-	@if [ -z "$(DB_HOST)" ] || [ -z "$(DB_NAME)" ] || [ -z "$(DB_USER)" ] || [ -z "$(DB_PASS)" ]; then \
-		echo "无法读取数据库配置"; \
-		echo "请设置环境变量（推荐）或确保 configs/config.yaml 包含 database 配置"; \
+	@if [ -z "$(DB_HOST)" ] || [ -z "$(DB_NAME)" ] || [ -z "$(DB_USER)" ]; then \
+		echo "错误: 无法读取数据库配置"; \
 		echo ""; \
-		echo "方式1：设置环境变量"; \
-		echo "  export GINFORGE_DATABASE_HOST=localhost"; \
-		echo "  export GINFORGE_DATABASE_PORT=3306"; \
-		echo "  export GINFORGE_DATABASE_DATABASE=gin_forge"; \
-		echo "  export GINFORGE_DATABASE_USERNAME=root"; \
-		echo "  export GINFORGE_DATABASE_PASSWORD=123456"; \
+		echo "请确保已运行 'make generate-config' 或 'make init' 生成配置文件"; \
+		echo "配置文件路径: configs/config.yaml"; \
 		echo ""; \
-		echo "方式2：复制 env.example 为 .env 并修改"; \
+		echo "如果配置文件不存在，请:"; \
+		echo "  1. 复制 env.example 为 .env: cp env.example .env"; \
+		echo "  2. 修改 .env 文件中的数据库配置"; \
+		echo "  3. 运行 make init 生成配置文件并初始化数据库"; \
 		exit 1; \
 	fi
 	@echo "数据库: $(DB_NAME)"

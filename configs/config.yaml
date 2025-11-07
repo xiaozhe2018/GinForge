@@ -1,11 +1,12 @@
 # GinForge 框架配置文件
-# 支持环境变量覆盖，格式：CONFIG_KEY=value
+# 此文件由 scripts/generate-config.go 根据 .env 文件自动生成
+# 请勿手动编辑此文件，修改配置请编辑 .env 文件后重新运行 make init
 
 # 应用基础配置
 app:
   name: "GinForge Framework"
   version: "0.1.0"
-  env: "development"  # development, production, test
+  env: "development"
   debug: true
   port: 8080
   read_timeout: "10s"
@@ -26,21 +27,25 @@ services:
     port: 8084
   demo:
     port: 8085
+  file_api:
+    port: 8086
+  websocket_gateway:
+    port: 8087
 
 # 日志配置
 log:
-  level: "debug"  # debug, info, warn, error
-  format: "json"  # json, text
-  output: "stdout"  # stdout, stderr, file
+  level: "debug"
+  format: "json"
+  output: "stdout"
   file_path: "logs/app.log"
-  max_size: 100  # MB
-  max_age: 30    # days
+  max_size: 100
+  max_age: 30
   max_backups: 10
   compress: true
 
 # 数据库配置
 database:
-  driver: "mysql"  # sqlite, mysql, postgres
+  driver: "mysql"
   host: "localhost"
   port: 3306
   database: "gin_forge"
@@ -48,14 +53,15 @@ database:
   password: "123456"
   charset: "utf8mb4"
   timezone: "Asia/Shanghai"
+  table_prefix: "gf_"
   max_idle_conns: 10
   max_open_conns: 100
   conn_max_lifetime: "1h"
-  log_level: "warn"  # silent, error, warn, info
+  log_level: "warn"
 
 # Redis配置
 redis:
-  enabled: true
+  enabled: false
   host: "localhost"
   port: 6379
   password: ""
@@ -107,13 +113,12 @@ monitor:
 
 # 服务发现配置
 service_discovery:
-  type: "none"  # none, consul, etcd
+  type: "none"
   consul:
     address: "127.0.0.1:8500"
     datacenter: "dc1"
     service_name: "ginforge"
     service_id: "ginforge-1"
-    service_tags: ["api", "v1"]
   etcd:
     endpoints: ["127.0.0.1:2379"]
     timeout: "5s"
@@ -155,7 +160,7 @@ microservices:
 # WebSocket 配置
 websocket:
   enabled: true
-  gateway_url: "ws://localhost:8087"  # WebSocket Gateway 地址
+  gateway_url: "ws://localhost:8087"
 
 # 外部服务配置
 external_services:
@@ -166,7 +171,7 @@ external_services:
 
 # 文件上传配置
 upload:
-  max_size: 10  # MB
+  max_size: 10
   allowed_types: ["image/jpeg", "image/png", "image/gif", "application/pdf"]
   upload_path: "uploads"
   temp_path: "temp"
@@ -184,7 +189,7 @@ email:
 # 短信配置
 sms:
   enabled: false
-  provider: "aliyun"  # aliyun, tencent, qiniu
+  provider: "aliyun"
   access_key: ""
   secret_key: ""
   sign_name: "GinForge"

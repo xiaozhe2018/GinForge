@@ -43,6 +43,7 @@ database:
   password: "${DB_PASSWORD}"
   charset: "utf8mb4"
   timezone: "Asia/Shanghai"
+  table_prefix: "gf_"  # 数据表前缀
   max_idle_conns: 20
   max_open_conns: 200
   conn_max_lifetime: "2h"
