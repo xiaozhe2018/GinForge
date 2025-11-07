@@ -38,7 +38,7 @@ type FileUploadLog struct {
 	model.BaseModel
 	FileName     string    `json:"file_name" gorm:"type:varchar(255);not null;comment:文件名"`
 	FileSize     int64     `json:"file_size" gorm:"type:bigint;comment:文件大小"`
-	UploadedBy   uint      `json:"uploaded_by" gorm:"type:int unsigned;index;comment:上传用户ID"`
+	UploadedBy   uint      `json:"uploaded_by" gorm:"type:bigint unsigned;index;comment:上传用户ID"`
 	UploadIP     string    `json:"upload_ip" gorm:"type:varchar(50);comment:上传IP"`
 	UploadTime   time.Time `json:"upload_time" gorm:"type:datetime;index;comment:上传时间"`
 	Success      bool      `json:"success" gorm:"type:tinyint(1);comment:是否成功"`
@@ -49,15 +49,15 @@ type FileUploadLog struct {
 
 // TableName 表名
 func (FileUploadLog) TableName() string {
-	return "file_upload_logs"
+	return "gf_file_upload_logs"
 }
 
 // FileDownloadLog 文件下载日志
 type FileDownloadLog struct {
 	model.BaseModel
-	FileID       uint      `json:"file_id" gorm:"type:int unsigned;index;comment:文件ID"`
+	FileID       uint      `json:"file_id" gorm:"type:bigint unsigned;index;comment:文件ID"`
 	FileName     string    `json:"file_name" gorm:"type:varchar(255);comment:文件名"`
-	DownloadedBy uint      `json:"downloaded_by" gorm:"type:int unsigned;index;comment:下载用户ID"`
+	DownloadedBy uint      `json:"downloaded_by" gorm:"type:bigint unsigned;index;comment:下载用户ID"`
 	DownloadIP   string    `json:"download_ip" gorm:"type:varchar(50);comment:下载IP"`
 	DownloadTime time.Time `json:"download_time" gorm:"type:datetime;index;comment:下载时间"`
 	Success      bool      `json:"success" gorm:"type:tinyint(1);comment:是否成功"`
@@ -65,5 +65,5 @@ type FileDownloadLog struct {
 
 // TableName 表名
 func (FileDownloadLog) TableName() string {
-	return "file_download_logs"
+	return "gf_file_download_logs"
 }

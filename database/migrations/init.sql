@@ -180,10 +180,57 @@ CREATE TABLE IF NOT EXISTS `gf_admin_operation_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
 -- ============================================
--- 3. 业务表（示例）
+-- 3. 文件服务相关表
 -- ============================================
 
--- 3.1 文章表
+-- 3.1 文件上传日志表
+CREATE TABLE IF NOT EXISTS `gf_file_upload_logs` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `created_at` datetime(3) DEFAULT NULL COMMENT '创建时间',
+    `updated_at` datetime(3) DEFAULT NULL COMMENT '更新时间',
+    `deleted_at` datetime(3) DEFAULT NULL COMMENT '删除时间',
+    `file_name` varchar(255) NOT NULL COMMENT '文件名',
+    `file_size` bigint DEFAULT NULL COMMENT '文件大小',
+    `uploaded_by` bigint unsigned DEFAULT NULL COMMENT '上传用户ID',
+    `upload_ip` varchar(50) DEFAULT NULL COMMENT '上传IP',
+    `upload_time` datetime DEFAULT NULL COMMENT '上传时间',
+    `success` tinyint(1) DEFAULT NULL COMMENT '是否成功: 1-成功, 0-失败',
+    `error_message` text COMMENT '错误信息',
+    `duration` bigint DEFAULT NULL COMMENT '上传耗时(毫秒)',
+    `upload_type` varchar(20) DEFAULT NULL COMMENT '上传类型: simple-普通上传, chunked-分片上传',
+    PRIMARY KEY (`id`),
+    KEY `idx_deleted_at` (`deleted_at`),
+    KEY `idx_uploaded_by` (`uploaded_by`),
+    KEY `idx_upload_time` (`upload_time`),
+    KEY `idx_success` (`success`),
+    KEY `idx_upload_type` (`upload_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件上传日志表';
+
+-- 3.2 文件下载日志表
+CREATE TABLE IF NOT EXISTS `gf_file_download_logs` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `created_at` datetime(3) DEFAULT NULL COMMENT '创建时间',
+    `updated_at` datetime(3) DEFAULT NULL COMMENT '更新时间',
+    `deleted_at` datetime(3) DEFAULT NULL COMMENT '删除时间',
+    `file_id` bigint unsigned DEFAULT NULL COMMENT '文件ID',
+    `file_name` varchar(255) DEFAULT NULL COMMENT '文件名',
+    `downloaded_by` bigint unsigned DEFAULT NULL COMMENT '下载用户ID',
+    `download_ip` varchar(50) DEFAULT NULL COMMENT '下载IP',
+    `download_time` datetime DEFAULT NULL COMMENT '下载时间',
+    `success` tinyint(1) DEFAULT NULL COMMENT '是否成功: 1-成功, 0-失败',
+    PRIMARY KEY (`id`),
+    KEY `idx_deleted_at` (`deleted_at`),
+    KEY `idx_file_id` (`file_id`),
+    KEY `idx_downloaded_by` (`downloaded_by`),
+    KEY `idx_download_time` (`download_time`),
+    KEY `idx_success` (`success`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件下载日志表';
+
+-- ============================================
+-- 4. 业务表（示例）
+-- ============================================
+
+-- 4.1 文章表
 CREATE TABLE IF NOT EXISTS `gf_articles` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '文章ID',
     `title` varchar(255) NOT NULL COMMENT '标题',
