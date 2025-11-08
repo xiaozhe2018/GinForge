@@ -9,6 +9,7 @@ import (
 	"goweb/services/admin-api/internal/service"
 	"net/http"
 	"runtime"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -326,6 +327,34 @@ func (h *AdminSystemHandler) ClearLogs(c *gin.Context) {
 	}
 
 	response.Success(c, "日志已清空")
+}
+
+// GetRecentLoginUsers 获取最近登录的用户
+// @Summary 获取最近登录的用户
+// @Description 获取最近成功登录的用户列表，用于仪表盘展示
+// @Tags 系统管理
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param limit query int false "返回数量" default(10)
+// @Success 200 {object} response.Response{data=[]model.RecentLoginUser}
+// @Router /api/v1/admin/system/recent-login-users [get]
+func (h *AdminSystemHandler) GetRecentLoginUsers(c *gin.Context) {
+	limit := 10
+	if limitStr := c.Query("limit"); limitStr != "" {
+		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	users, err := h.systemService.GetRecentLoginUsers(c.Request.Context(), limit)
+	if err != nil {
+		h.logger.Error("Failed to get recent login users", "error", err)
+		response.InternalError(c, "获取最近登录用户失败")
+		return
+	}
+
+	response.Success(c, users)
 }
 
 // GetRuntimeInfo 获取运行时信息

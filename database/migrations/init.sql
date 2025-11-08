@@ -179,6 +179,25 @@ CREATE TABLE IF NOT EXISTS `gf_admin_operation_logs` (
     KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
 
+-- 2.3 登录记录表
+CREATE TABLE IF NOT EXISTS `gf_admin_login_logs` (
+    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `user_id` bigint(20) unsigned NOT NULL COMMENT '用户ID',
+    `username` varchar(50) NOT NULL COMMENT '用户名',
+    `login_ip` varchar(45) DEFAULT NULL COMMENT '登录IP',
+    `user_agent` text COMMENT '用户代理',
+    `login_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '登录时间',
+    `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '登录状态: 1-成功, 0-失败',
+    `failure_reason` varchar(255) DEFAULT NULL COMMENT '失败原因',
+    `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_username` (`username`),
+    KEY `idx_login_time` (`login_time`),
+    KEY `idx_status` (`status`),
+    KEY `idx_login_ip` (`login_ip`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录记录表';
+
 -- ============================================
 -- 3. 文件服务相关表
 -- ============================================
@@ -312,15 +331,23 @@ ON DUPLICATE KEY UPDATE `code`=`code`;
 INSERT INTO `gf_admin_menus` (`parent_id`, `name`, `code`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `status`, `description`) VALUES
 -- 一级菜单
 (0, '仪表盘', 'dashboard', 'menu', '/dashboard', 'Dashboard', 'House', 1, 1, 1, '系统仪表盘'),
-(0, '用户管理', 'user_management', 'directory', '', '', 'User', 2, 1, 1, '用户管理模块'),
-(0, '角色管理', 'role_management', 'directory', '', '', 'UserFilled', 3, 1, 1, '角色管理模块'),
-(0, '菜单管理', 'menu_management', 'directory', '', '', 'Menu', 4, 1, 1, '菜单管理模块'),
-(0, '权限管理', 'permission_management', 'menu', '/dashboard/permissions', 'Permissions', 'Key', 5, 1, 1, '权限管理'),
-(0, '系统管理', 'system_management', 'menu', '/dashboard/system', 'System', 'Setting', 6, 1, 1, '系统管理'),
-(0, '文章管理', 'articles_management', 'menu', '/dashboard/articleses', 'Articles', 'Document', 7, 1, 1, '文章管理')
+(0, '系统管理', 'system_management', 'directory', '', '', 'Setting', 2, 1, 1, '系统管理模块'),
+(0, '文章管理', 'articles_management', 'menu', '/dashboard/articleses', 'Articles', 'Document', 3, 1, 1, '文章管理')
 ON DUPLICATE KEY UPDATE `code`=`code`;
 
--- 插入二级菜单（需要先获取一级菜单ID）
+-- 插入系统管理下的二级菜单（需要先获取系统管理菜单ID）
+SET @system_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'system_management' LIMIT 1);
+
+INSERT INTO `gf_admin_menus` (`parent_id`, `name`, `code`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `status`, `description`) VALUES
+-- 系统管理下的二级菜单
+(@system_menu_id, '系统配置', 'system_config', 'menu', '/dashboard/system', 'System', 'Setting', 1, 1, 1, '系统配置管理'),
+(@system_menu_id, '用户管理', 'user_management', 'directory', '', '', 'User', 2, 1, 1, '用户管理模块'),
+(@system_menu_id, '角色管理', 'role_management', 'directory', '', '', 'UserFilled', 3, 1, 1, '角色管理模块'),
+(@system_menu_id, '菜单管理', 'menu_management', 'directory', '', '', 'Menu', 4, 1, 1, '菜单管理模块'),
+(@system_menu_id, '权限管理', 'permission_management', 'menu', '/dashboard/permissions', 'Permissions', 'Key', 5, 1, 1, '权限管理')
+ON DUPLICATE KEY UPDATE `code`=`code`;
+
+-- 插入三级菜单（用户管理、角色管理、菜单管理的子菜单）
 SET @user_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'user_management' LIMIT 1);
 SET @role_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'role_management' LIMIT 1);
 SET @menu_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'menu_management' LIMIT 1);

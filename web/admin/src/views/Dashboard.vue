@@ -118,7 +118,7 @@
           <template #header>
             <span>系统状态</span>
           </template>
-          <div class="status-list">
+          <div class="status-list" v-loading="systemStatus.loading">
             <div class="status-item">
               <div class="status-label">CPU使用率</div>
               <div class="status-value">
@@ -160,11 +160,11 @@
         <el-card class="table-card">
           <template #header>
             <div class="card-header">
-              <span>最近注册用户</span>
+              <span>最近登录用户</span>
               <el-button type="text" @click="$router.push('/dashboard/users')">查看全部</el-button>
             </div>
           </template>
-          <el-table :data="recentUsers" style="width: 100%">
+          <el-table :data="recentUsers" v-loading="recentUsersLoading" style="width: 100%">
             <el-table-column prop="username" label="用户名" width="120" />
             <el-table-column prop="email" label="邮箱" min-width="150" />
             <el-table-column prop="status" label="状态" width="80">
@@ -174,9 +174,9 @@
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="createdAt" label="注册时间" width="120">
+            <el-table-column prop="createdAt" label="登录时间" width="180">
               <template #default="{ row }">
-                {{ formatDate(row.createdAt) }}
+                {{ formatDateTime(row.createdAt) }}
               </template>
             </el-table-column>
           </el-table>
@@ -237,7 +237,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
+import * as systemApi from '@/api/system'
 import { 
   User, 
   ShoppingCart, 
@@ -284,36 +286,16 @@ const chartPeriod = ref('7d')
 
 // 系统状态
 const systemStatus = reactive({
-  cpu: 45,
-  memory: 68,
-  disk: 32,
-  network: true
+  cpu: 0,
+  memory: 0,
+  disk: 0,
+  network: true,
+  loading: false
 })
 
 // 最近用户
-const recentUsers = ref([
-  {
-    id: 1,
-    username: 'user001',
-    email: 'user001@example.com',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 2,
-    username: 'user002',
-    email: 'user002@example.com',
-    status: 'active',
-    createdAt: new Date(Date.now() - 3600000).toISOString()
-  },
-  {
-    id: 3,
-    username: 'user003',
-    email: 'user003@example.com',
-    status: 'disabled',
-    createdAt: new Date(Date.now() - 7200000).toISOString()
-  }
-])
+const recentUsers = ref<any[]>([])
+const recentUsersLoading = ref(false)
 
 // 系统日志
 const systemLogs = ref([
@@ -382,10 +364,90 @@ const formatTime = (date: any) => {
   return new Date(date).toLocaleTimeString('zh-CN')
 }
 
+// 格式化日期时间
+const formatDateTime = (date: any) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  })
+}
+
+// 加载系统状态数据
+let systemStatusTimer: any = null
+
+const loadSystemStatus = async () => {
+  try {
+    systemStatus.loading = true
+    const data: any = await systemApi.getSystemInfo()
+    
+    // 后端返回的字段名可能是驼峰命名，需要适配
+    systemStatus.cpu = data.cpu_usage || data.cpuUsage || 0
+    systemStatus.memory = data.memory_usage || data.memoryUsage || 0
+    systemStatus.disk = data.disk_usage || data.diskUsage || 0
+    
+    // 网络状态：根据网络流量判断是否正常
+    const networkIn = data.network_in || data.networkIn || 0
+    const networkOut = data.network_out || data.networkOut || 0
+    systemStatus.network = true // 如果能获取到数据，说明网络正常
+    
+    // 更新在线用户数
+    stats.onlineUsers = data.online_users || data.onlineUsers || 0
+  } catch (error) {
+    console.error('加载系统状态失败:', error)
+    ElMessage.error('加载系统状态失败')
+  } finally {
+    systemStatus.loading = false
+  }
+}
+
+// 加载最近登录用户
+const loadRecentUsers = async () => {
+  try {
+    recentUsersLoading.value = true
+    const data = await systemApi.getRecentLoginUsers(10)
+    
+    // 转换数据格式
+    recentUsers.value = data.map((user: any) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: user.name || user.username,
+      status: user.status === 1 ? 'active' : 'disabled',
+      createdAt: user.login_time || user.loginTime
+    }))
+  } catch (error) {
+    console.error('加载最近登录用户失败:', error)
+    // 不显示错误提示，使用空数组
+    recentUsers.value = []
+  } finally {
+    recentUsersLoading.value = false
+  }
+}
+
 // 组件挂载时获取数据
 onMounted(() => {
-  // 这里应该从API获取仪表盘数据
-  console.log('Dashboard mounted')
+  // 立即加载一次
+  loadSystemStatus()
+  loadRecentUsers()
+  
+  // 每30秒刷新一次系统状态
+  systemStatusTimer = setInterval(() => {
+    loadSystemStatus()
+    loadRecentUsers()
+  }, 30000)
+})
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (systemStatusTimer) {
+    clearInterval(systemStatusTimer)
+    systemStatusTimer = null
+  }
 })
 </script>
 

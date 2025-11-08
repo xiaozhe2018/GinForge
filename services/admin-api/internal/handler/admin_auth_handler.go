@@ -48,11 +48,15 @@ func (h *AdminAuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// 获取客户端IP
+	// 获取客户端IP和User-Agent
 	clientIP := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	// 将User-Agent传递给context（如果需要的话，可以通过context传递）
+	// 这里我们直接传递IP，User-Agent可以在服务层从请求中获取
 
 	// 调用服务层登录
-	result, err := h.userService.Login(&req, clientIP)
+	result, err := h.userService.Login(&req, clientIP, userAgent)
 	if err != nil {
 		h.logger.Error("login error", err, "ip", clientIP, "username", req.Username)
 		response.Unauthorized(c, err.Error())

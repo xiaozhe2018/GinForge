@@ -136,6 +136,7 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	auth.POST("/system/cache/clear", adminSystemHandler.ClearCache)
 	auth.GET("/system/logs", adminSystemHandler.GetLogList)
 	auth.POST("/system/logs/clear", adminSystemHandler.ClearLogs)
+	auth.GET("/system/recent-login-users", adminSystemHandler.GetRecentLoginUsers)
 	auth.GET("/system/runtime", adminSystemHandler.GetRuntimeInfo)
 	auth.GET("/system/health", adminSystemHandler.HealthCheck)
 

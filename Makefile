@@ -17,7 +17,7 @@ help:
 	@echo "  make compose   - 启动 Docker Compose"
 	@echo ""
 	@echo "数据库命令:"
-	@echo "  make init           - 初始化数据库（推荐：生成配置文件 + 初始化数据库）"
+	@echo "  make init           - 完整初始化（推荐：生成配置 + 初始化数据库）"
 	@echo "  make generate-config - 从 .env 生成 configs/config.yaml"
 	@echo "  make db-init        - 初始化数据库（执行所有迁移文件）"
 	@echo "  make db-reset       - 重置数据库（删除并重新创建）"
@@ -25,7 +25,7 @@ help:
 	@echo ""
 	@echo "配置说明:"
 	@echo "  1. 复制 env.example 为 .env: cp env.example .env"
-	@echo "  2. 修改 .env 文件中的配置"
+	@echo "  2. 修改 .env 文件中的配置（数据库、Redis 等）"
 	@echo "  3. 运行 make init 生成配置文件并初始化数据库"
 
 # 构建所有服务
@@ -202,12 +202,15 @@ generate-config:
 		exit 1; \
 	fi
 	@go run scripts/generate-config.go
+	@echo "✓ 配置文件生成完成"
 
 # 初始化数据库（别名，推荐使用）
 # 步骤：1. 生成配置文件  2. 初始化数据库
 init: generate-config db-init
 	@echo ""
-	@echo "✓ 数据库初始化完成！"
+	@echo "✓ 初始化完成！"
+	@echo "  - 配置文件已生成"
+	@echo "  - 数据库已初始化"
 
 # 从配置文件读取数据库信息
 DB_HOST := $(shell grep -A 10 "^database:" configs/config.yaml | grep "^  host:" | awk '{print $$2}' | tr -d '"')

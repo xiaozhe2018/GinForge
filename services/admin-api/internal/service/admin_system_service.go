@@ -9,6 +9,7 @@ import (
 	"goweb/pkg/redis"
 	"goweb/pkg/validator"
 	"goweb/services/admin-api/internal/model"
+	"goweb/services/admin-api/internal/repository"
 	"os"
 	"runtime"
 	"strconv"
@@ -27,6 +28,7 @@ type AdminSystemService struct {
 	redisClient   *redis.Client
 	notifyService *notification.Service
 	logger        logger.Logger
+	loginLogRepo  *repository.LoginLogRepository
 	startTime     time.Time
 	version       string
 	environment   string
@@ -45,6 +47,7 @@ func NewAdminSystemService(db *gorm.DB, redisClient *redis.Client, notifyService
 		redisClient:   redisClient,
 		notifyService: notifyService,
 		logger:        log,
+		loginLogRepo:  repository.NewLoginLogRepository(db),
 		startTime:     time.Now(),
 		version:       "1.0.0", // 可从配置或构建信息中获取
 		environment:   env,
@@ -387,6 +390,14 @@ func (s *AdminSystemService) CheckHealth(ctx context.Context) map[string]interfa
 	}
 
 	return health
+}
+
+// GetRecentLoginUsers 获取最近登录的用户
+func (s *AdminSystemService) GetRecentLoginUsers(ctx context.Context, limit int) ([]model.RecentLoginUser, error) {
+	if s.loginLogRepo == nil {
+		return []model.RecentLoginUser{}, nil
+	}
+	return s.loginLogRepo.GetRecentLoginUsersV2(limit)
 }
 
 // GetPasswordMinLength 获取密码最小长度配置

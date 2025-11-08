@@ -2,13 +2,15 @@ import request from './index'
 
 // 系统相关API
 export interface SystemInfo {
+  online_users: number
   cpu_usage: number
   memory_usage: number
   disk_usage: number
-  online_users: number
-  total_users: number
-  total_requests: number
-  error_count: number
+  network_in: number
+  network_out: number
+  uptime: string
+  version: string
+  environment: string
 }
 
 export interface SystemConfig {
@@ -95,5 +97,23 @@ export const getSystemLogList = (params: SystemLogListParams) => {
 // 清空系统日志
 export const clearSystemLogs = () => {
   return request.delete('/api/v1/admin/system/logs')
+}
+
+// 获取最近登录的用户
+export const getRecentLoginUsers = (limit: number = 10) => {
+  return request.get<RecentLoginUser[]>('/api/v1/admin/system/recent-login-users', {
+    params: { limit }
+  })
+}
+
+// 最近登录用户接口
+export interface RecentLoginUser {
+  id: number
+  username: string
+  email: string
+  name?: string
+  status: number
+  login_time: string
+  login_ip?: string
 }
 

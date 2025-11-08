@@ -25,6 +25,7 @@ type AdminService struct {
 	menuRepo           *repository.MenuRepository
 	permissionRepo     *repository.PermissionRepository
 	logRepo            *repository.OperationLogRepository
+	loginLogRepo       *repository.LoginLogRepository
 	redisClient        *pkgRedis.Client
 	logger             logger.Logger
 	config             *config.Config
@@ -44,6 +45,7 @@ func NewAdminService(db *gorm.DB, cfg *config.Config, redisClient *pkgRedis.Clie
 		menuRepo:           repository.NewMenuRepository(db),
 		permissionRepo:     repository.NewPermissionRepository(db),
 		logRepo:            repository.NewOperationLogRepository(db),
+		loginLogRepo:       repository.NewLoginLogRepository(db),
 		redisClient:        redisClient,
 		config:             cfg,
 		notificationClient: notifyClient,
@@ -74,7 +76,7 @@ func (s *UserService) SetSystemService(systemService *AdminSystemService) {
 }
 
 // Login 用户登录
-func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*model.AdminUserLoginResponse, error) {
+func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP, userAgent string) (*model.AdminUserLoginResponse, error) {
 	ctx := context.Background()
 	
 	// 检查账户是否被锁定（使用Redis存储锁定信息）
@@ -94,6 +96,8 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			// 记录失败尝试
 			s.recordLoginFailure(ctx, req.Username)
+			// 记录登录失败日志
+			go s.recordLoginLog(req.Username, 0, loginIP, userAgent, "用户名不存在")
 			return nil, errors.New("用户名或密码错误")
 		}
 		return nil, err
@@ -103,6 +107,8 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		// 记录失败尝试
 		s.recordLoginFailure(ctx, req.Username)
+		// 记录登录失败日志
+		go s.recordLoginLog(user.Username, user.ID, loginIP, userAgent, "密码错误")
 		return nil, errors.New("用户名或密码错误")
 	}
 
@@ -121,7 +127,7 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 		}
 	}()
 
-	// 记录登录日志
+	// 记录登录日志到操作日志表
 	go func() {
 		username := user.Username
 		userID := user.ID
@@ -138,6 +144,9 @@ func (s *UserService) Login(req *model.AdminUserLoginRequest, loginIP string) (*
 			s.logger.Error("create login log error", err)
 		}
 	}()
+
+	// 记录登录日志到登录记录表（成功）
+	go s.recordLoginLog(user.Username, user.ID, loginIP, userAgent, "")
 
 	// 获取用户菜单
 	var menus []model.AdminMenu
@@ -610,4 +619,38 @@ func (s *UserService) clearLoginFailures(ctx context.Context, username string) {
 	
 	failureKey := fmt.Sprintf("login:failures:%s", username)
 	s.redisClient.Del(ctx, failureKey)
+}
+
+// recordLoginLog 记录登录日志（成功或失败）
+func (s *UserService) recordLoginLog(username string, userID uint64, loginIP, userAgent, failureReason string) {
+	loginLog := &model.AdminLoginLog{
+		Username: username,
+		LoginIP:  &loginIP,
+		Status:   1, // 成功
+	}
+	
+	if userID > 0 {
+		loginLog.UserID = userID
+	} else {
+		// 如果用户不存在，尝试根据用户名查找用户ID
+		user, err := s.userRepo.GetByUsername(username)
+		if err == nil {
+			loginLog.UserID = user.ID
+		}
+	}
+	
+	if userAgent != "" {
+		loginLog.UserAgent = &userAgent
+	}
+	
+	if failureReason != "" {
+		loginLog.Status = 0 // 失败
+		loginLog.FailureReason = &failureReason
+	}
+	
+	loginLog.LoginTime = time.Now()
+	
+	if err := s.loginLogRepo.Create(loginLog); err != nil {
+		s.logger.Error("create login log record error", err)
+	}
 }
