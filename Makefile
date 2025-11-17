@@ -49,9 +49,12 @@ install-cli:
 	@sudo cp bin/ginforge /usr/local/bin/
 	@echo "CLI工具已安装到 /usr/local/bin/ginforge"
 
-# 启动所有服务
+# 启动所有服务（会自动加载 .env 文件）
 run:
 	@echo "启动所有微服务..."
+	@if [ -f .env ]; then \
+		echo "检测到 .env 文件，环境变量将被自动加载"; \
+	fi
 	@go run ./services/user-api/cmd/server &
 	@go run ./services/merchant-api/cmd/server &
 	@go run ./services/admin-api/cmd/server &

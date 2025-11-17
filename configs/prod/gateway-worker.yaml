@@ -1,0 +1,11 @@
+# gateway-worker 服务生产环境配置
+
+services:
+  gateway_worker:
+    port: 8084
+
+log:
+  level: "info"
+  output: "file"
+  file_path: "/var/log/ginforge/gateway-worker.log"
+

@@ -163,11 +163,11 @@ router.beforeEach((to, _from, next) => {
     
     // 超级管理员跳过权限检查
     if (!isSuperAdmin) {
-      const permissions = JSON.parse(localStorage.getItem('admin_permissions') || '[]')
-      if (!permissions.includes(to.meta.permission)) {
-        ElMessage.error('没有权限访问此页面')
-        next('/dashboard')
-        return
+    const permissions = JSON.parse(localStorage.getItem('admin_permissions') || '[]')
+    if (!permissions.includes(to.meta.permission)) {
+      ElMessage.error('没有权限访问此页面')
+      next('/dashboard')
+      return
       }
     }
   }

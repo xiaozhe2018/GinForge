@@ -1,0 +1,10 @@
+# user-api 服务测试环境配置
+
+services:
+  user_api:
+    port: 8081
+
+log:
+  level: "debug"
+  output: "stdout"
+

@@ -1,0 +1,11 @@
+# demo 服务生产环境配置
+
+services:
+  demo:
+    port: 8085
+
+log:
+  level: "info"
+  output: "file"
+  file_path: "/var/log/ginforge/demo.log"
+

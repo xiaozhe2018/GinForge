@@ -1,0 +1,10 @@
+# gateway 服务测试环境配置
+
+services:
+  gateway:
+    port: 8080
+
+log:
+  level: "debug"
+  output: "stdout"
+

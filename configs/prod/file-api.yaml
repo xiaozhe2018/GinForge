@@ -1,0 +1,67 @@
+# file-api 服务生产环境配置
+
+services:
+  file_api:
+    port: 8086
+
+log:
+  level: "info"
+  format: "json"
+  output: "file"
+  file_path: "/var/log/ginforge/file-api.log"
+
+# 文件服务特定配置
+storage:
+  type: local
+  local:
+    base_path: /var/uploads
+    temp_dir: /var/uploads/temp
+    auto_create_dir: true
+    file_mode: 0644
+    dir_mode: 0755
+  url_prefix: https://files.yourdomain.com
+  max_file_size: 524288000
+  chunked_upload:
+    enabled: true
+    chunk_size: 10485760
+    chunk_timeout: 7200
+    chunk_dir: /var/uploads/chunks
+  domains:
+    use_custom_domain: true
+    static_domain: https://static.yourdomain.com
+    upload_domain: https://upload.yourdomain.com
+
+# 文件类型限制
+file_types:
+  allowed_mime_types:
+    image:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+    document:
+      - application/pdf
+  allowed_extensions:
+    image:
+      - .jpg
+      - .jpeg
+      - .png
+      - .gif
+      - .webp
+    document:
+      - .pdf
+  denied_extensions:
+    - .php
+    - .exe
+    - .sh
+    - .bat
+
+# 上传限制
+upload_limits:
+  max_file_size: 524288000
+  max_files_per_request: 10
+  max_uploads_per_minute: 60
+  max_daily_upload_size_per_user: 5368709120
+  max_daily_uploads_per_user: 200
+  max_concurrent_uploads: 10
+

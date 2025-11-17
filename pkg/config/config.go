@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -18,16 +20,21 @@ type Config struct {
 }
 
 // New 创建配置管理器
+// 配置组织方式：按环境目录组织
+// - 基础配置：configs/{env}/base.yaml
+// - 服务配置：configs/{env}/{service}.yaml
+//
+// 配置优先级（从高到低）：
+// 1. 环境变量（GOEASE_* 前缀）
+// 2. .env 文件中的环境变量
+// 3. YAML 配置文件中的值
+// 4. 代码中的默认值
 func New() *Config {
-	v := viper.New()
+	// 自动加载 .env 文件（如果存在）
+	// 忽略错误，允许不提供 .env 文件
+	_ = godotenv.Load()
 
-	// 设置配置文件
-	v.SetConfigName("config")
-	v.SetConfigType("yaml")
-	v.AddConfigPath("./configs")
-	v.AddConfigPath(".")
-	v.AddConfigPath("/etc/goease")
-	v.AddConfigPath("$HOME/.goease")
+	v := viper.New()
 
 	// 设置环境变量前缀
 	v.SetEnvPrefix("GOEASE")
@@ -37,26 +44,50 @@ func New() *Config {
 	// 设置默认值
 	setDefaults(v)
 
-	// 读取配置文件
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-			panic(fmt.Errorf("fatal error config file: %w", err))
-		}
-	}
-
-	// 根据环境变量选择配置文件
-	env := v.GetString("app.env")
+	// 优先从环境变量获取环境名称，如果没有则使用默认值
+	env := os.Getenv("GOEASE_APP_ENV")
 	if env == "" {
-		env = "development"
+		env = "dev"
 	}
 
-	// 读取环境特定配置
-	if env != "development" {
-		envConfig := fmt.Sprintf("config.%s.yaml", env)
-		v.SetConfigName(envConfig)
-		if err := v.MergeInConfig(); err != nil {
-			// 环境特定配置文件不存在时忽略错误
+	// 获取服务名称（可选）
+	serviceName := os.Getenv("SERVICE_NAME")
+	// 如果未设置，尝试从程序名推断（例如：admin-api -> admin-api）
+	if serviceName == "" {
+		if programName := os.Args[0]; programName != "" {
+			// 从程序路径中提取服务名
+			baseName := filepath.Base(programName)
+			// 移除可能的扩展名
+			serviceName = strings.TrimSuffix(baseName, filepath.Ext(baseName))
 		}
+	}
+
+	// 按环境目录组织方式加载配置
+	envDir := filepath.Join("./configs", env)
+	baseConfigPath := filepath.Join(envDir, "base.yaml")
+
+	// 检查环境目录是否存在
+	if _, err := os.Stat(baseConfigPath); err != nil {
+		panic(fmt.Errorf("config file not found: %s, please set GOEASE_APP_ENV environment variable (dev/test/prod)", baseConfigPath))
+	}
+
+	// 1. 读取基础配置（base.yaml 必须存在且最先加载）
+	v.SetConfigName("base")
+	v.SetConfigType("yaml")
+	v.AddConfigPath(envDir)
+	if err := v.ReadInConfig(); err != nil {
+		panic(fmt.Errorf("fatal error reading base config: %w", err))
+	}
+
+	// 2. 自动加载环境目录下的所有其他 YAML 配置文件
+	// 这样添加新配置文件时，无需修改代码，只需创建文件即可
+	if err := loadConfigFiles(v, envDir, serviceName); err != nil {
+		panic(fmt.Errorf("fatal error loading config files: %w", err))
+	}
+
+	// 更新环境变量（从配置文件读取）
+	if v.IsSet("app.env") {
+		env = v.GetString("app.env")
 	}
 
 	return &Config{
@@ -153,6 +184,71 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("gateway.timeout", "30s")
 	v.SetDefault("gateway.retry_count", 3)
 	v.SetDefault("gateway.retry_delay", "1s")
+}
+
+// loadConfigFiles 自动加载环境目录下的所有 YAML 配置文件
+// 加载顺序：
+// 1. base.yaml（已加载）
+// 2. 其他 .yaml 文件按文件名排序（确保一致性）
+//
+// 这样添加新配置文件时，只需创建文件即可，无需修改代码
+func loadConfigFiles(v *viper.Viper, envDir string, serviceName string) error {
+	// 读取目录下的所有文件
+	entries, err := os.ReadDir(envDir)
+	if err != nil {
+		return fmt.Errorf("failed to read config directory: %w", err)
+	}
+
+	// 收集所有 .yaml 文件（排除已加载的 base.yaml）
+	var configFiles []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		// 跳过 base.yaml（已加载）
+		if name == "base.yaml" {
+			continue
+		}
+
+		// 只处理 .yaml 文件
+		if strings.HasSuffix(name, ".yaml") || strings.HasSuffix(name, ".yml") {
+			configFiles = append(configFiles, name)
+		}
+	}
+
+	// 按文件名排序，确保加载顺序一致
+	// 这允许通过文件名前缀控制加载顺序，例如：01-cache.yaml, 02-service.yaml
+	sort.Strings(configFiles)
+
+	// 如果指定了服务名称，优先加载对应的服务配置文件
+	if serviceName != "" {
+		serviceFileName := fmt.Sprintf("%s.yaml", serviceName)
+		// 查找服务配置文件的位置
+		for i, file := range configFiles {
+			if file == serviceFileName {
+				// 将服务配置文件移到最前面（紧跟在 base.yaml 之后）
+				configFiles = append([]string{serviceFileName}, append(configFiles[:i], configFiles[i+1:]...)...)
+				break
+			}
+		}
+	}
+
+	// 加载所有配置文件（按顺序合并）
+	for _, fileName := range configFiles {
+		configName := strings.TrimSuffix(fileName, ".yaml")
+		configName = strings.TrimSuffix(configName, ".yml")
+
+		v.SetConfigName(configName)
+		if err := v.MergeInConfig(); err != nil {
+			// 配置文件不存在或格式错误时记录警告，但不中断
+			// 这允许配置文件是可选的
+			continue
+		}
+	}
+
+	return nil
 }
 
 // GetString 获取字符串配置

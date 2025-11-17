@@ -1,0 +1,10 @@
+# merchant-api 服务测试环境配置
+
+services:
+  merchant_api:
+    port: 8082
+
+log:
+  level: "debug"
+  output: "stdout"
+

@@ -1,0 +1,11 @@
+# merchant-api 服务生产环境配置
+
+services:
+  merchant_api:
+    port: 8082
+
+log:
+  level: "info"
+  output: "file"
+  file_path: "/var/log/ginforge/merchant-api.log"
+

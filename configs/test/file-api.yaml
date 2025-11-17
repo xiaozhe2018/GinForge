@@ -1,0 +1,18 @@
+# file-api 服务测试环境配置
+
+services:
+  file_api:
+    port: 8086
+
+log:
+  level: "debug"
+  output: "stdout"
+
+storage:
+  type: local
+  local:
+    base_path: ./uploads/test
+    temp_dir: ./uploads/test/temp
+  url_prefix: http://localhost:8086/uploads/test
+  max_file_size: 104857600
+

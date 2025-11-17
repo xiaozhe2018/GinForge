@@ -1,0 +1,18 @@
+# 配置文件说明
+# 
+# 本目录包含两种配置组织方式：
+# 
+# 1. 按环境目录组织（推荐）：
+#    - dev/    开发环境配置
+#    - test/   测试环境配置
+#    - prod/   生产环境配置
+# 
+# 2. 扁平化组织（向后兼容）：
+#    - config.yaml
+#    - config.prod.yaml
+#    - config.test.yaml
+#    - file-api.yaml
+#    - notification.yaml
+# 
+# 注意：扁平化配置文件保留用于向后兼容，新项目建议使用环境目录组织方式。
+

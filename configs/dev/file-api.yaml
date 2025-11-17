@@ -1,0 +1,63 @@
+# file-api 服务开发环境配置
+
+services:
+  file_api:
+    port: 8086
+
+log:
+  level: "debug"
+  format: "console"
+  output: "stdout"
+  file_path: "logs/file-api.log"
+
+# 文件服务特定配置
+storage:
+  type: local
+  local:
+    base_path: ./uploads
+    temp_dir: ./uploads/temp
+    auto_create_dir: true
+    file_mode: 0644
+    dir_mode: 0755
+  url_prefix: http://localhost:8086/uploads
+  max_file_size: 104857600
+  chunked_upload:
+    enabled: true
+    chunk_size: 5242880
+    chunk_timeout: 3600
+    chunk_dir: ./uploads/chunks
+
+# 文件类型限制
+file_types:
+  allowed_mime_types:
+    image:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+    document:
+      - application/pdf
+  allowed_extensions:
+    image:
+      - .jpg
+      - .jpeg
+      - .png
+      - .gif
+      - .webp
+    document:
+      - .pdf
+  denied_extensions:
+    - .php
+    - .exe
+    - .sh
+    - .bat
+
+# 上传限制
+upload_limits:
+  max_file_size: 104857600
+  max_files_per_request: 10
+  max_uploads_per_minute: 30
+  max_daily_upload_size_per_user: 1073741824
+  max_daily_uploads_per_user: 100
+  max_concurrent_uploads: 5
+

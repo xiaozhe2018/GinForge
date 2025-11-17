@@ -1,0 +1,19 @@
+# websocket-gateway 服务生产环境配置
+
+services:
+  websocket_gateway:
+    port: 8087
+
+log:
+  level: "info"
+  output: "file"
+  file_path: "/var/log/ginforge/websocket-gateway.log"
+
+# WebSocket 配置
+websocket:
+  enabled: true
+  gateway_url: "wss://ws.yourdomain.com"
+  ping_interval: 30s
+  pong_wait: 60s
+  max_message_size: 1024
+

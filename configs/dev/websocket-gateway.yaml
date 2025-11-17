@@ -1,0 +1,18 @@
+# websocket-gateway 服务开发环境配置
+
+services:
+  websocket_gateway:
+    port: 8087
+
+log:
+  level: "debug"
+  output: "stdout"
+
+# WebSocket 配置
+websocket:
+  enabled: true
+  gateway_url: "ws://localhost:8087"
+  ping_interval: 30s
+  pong_wait: 60s
+  max_message_size: 512
+

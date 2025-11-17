@@ -1,0 +1,19 @@
+# admin-api 服务开发环境配置
+# 此配置会合并到 base.yaml 之上
+
+# 服务端口配置
+services:
+  admin_api:
+    port: 8083
+
+# 日志配置（覆盖基础配置）
+log:
+  level: "debug"
+  output: "stdout"
+
+# 服务特定配置
+admin:
+  # 管理后台特定配置
+  default_page_size: 20
+  max_page_size: 100
+

@@ -1,0 +1,11 @@
+# user-api 服务生产环境配置
+
+services:
+  user_api:
+    port: 8081
+
+log:
+  level: "info"
+  output: "file"
+  file_path: "/var/log/ginforge/user-api.log"
+

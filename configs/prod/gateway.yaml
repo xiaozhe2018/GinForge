@@ -1,0 +1,23 @@
+# gateway 服务生产环境配置
+
+services:
+  gateway:
+    port: 8080
+
+log:
+  level: "info"
+  output: "file"
+  file_path: "/var/log/ginforge/gateway.log"
+
+# 网关特定配置
+gateway:
+  routes:
+    - path: "/api/v1/users"
+      target: "http://user-api:8081"
+    - path: "/api/v1/merchants"
+      target: "http://merchant-api:8082"
+    - path: "/api/v1/admin"
+      target: "http://admin-api:8083"
+    - path: "/api/v1/files"
+      target: "http://file-api:8086"
+

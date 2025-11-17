@@ -14,54 +14,39 @@
         router
         class="sidebar-menu"
       >
-        <!-- 仪表盘 -->
-        <el-menu-item index="/dashboard">
-          <el-icon><House /></el-icon>
-          <span>仪表盘</span>
+        <template v-for="menu in menuTree" :key="menu.id">
+          <!-- 有子菜单的菜单项（directory 类型或 children 不为空） -->
+          <el-sub-menu v-if="(menu.children && menu.children.length > 0) || menu.type === 'directory'" :index="menu.path || String(menu.id)">
+            <template #title>
+              <el-icon v-if="menu.icon"><component :is="getIcon(menu.icon)" /></el-icon>
+              <span>{{ menu.name }}</span>
+            </template>
+            <template v-if="menu.children && menu.children.length > 0">
+              <template v-for="child in menu.children" :key="child.id">
+                <el-menu-item v-if="(!child.children || child.children.length === 0) && child.type !== 'directory'" :index="child.path || String(child.id)">
+                  <el-icon v-if="child.icon"><component :is="getIcon(child.icon)" /></el-icon>
+                  <span>{{ child.name }}</span>
         </el-menu-item>
-        
-        <!-- 后台用户管理 -->
-        <el-menu-item index="/dashboard/users">
-          <el-icon><User /></el-icon>
-          <span>后台用户管理</span>
+                <!-- 支持三级菜单 -->
+                <el-sub-menu v-else-if="child.children && child.children.length > 0" :index="child.path || String(child.id)">
+                  <template #title>
+                    <el-icon v-if="child.icon"><component :is="getIcon(child.icon)" /></el-icon>
+                    <span>{{ child.name }}</span>
+                  </template>
+                  <el-menu-item v-for="grandchild in child.children" :key="grandchild.id" :index="grandchild.path || String(grandchild.id)">
+                    <el-icon v-if="grandchild.icon"><component :is="getIcon(grandchild.icon)" /></el-icon>
+                    <span>{{ grandchild.name }}</span>
         </el-menu-item>
-        
-        <!-- 角色管理 -->
-        <el-menu-item index="/dashboard/roles">
-          <el-icon><UserFilled /></el-icon>
-          <span>角色管理</span>
+                </el-sub-menu>
+              </template>
+            </template>
+          </el-sub-menu>
+          <!-- 没有子菜单的菜单项 -->
+          <el-menu-item v-else :index="menu.path || String(menu.id)">
+            <el-icon v-if="menu.icon"><component :is="getIcon(menu.icon)" /></el-icon>
+            <span>{{ menu.name }}</span>
         </el-menu-item>
-        
-        <!-- 菜单管理 -->
-        <el-menu-item index="/dashboard/menus">
-          <el-icon><Menu /></el-icon>
-          <span>菜单管理</span>
-        </el-menu-item>
-        
-        <!-- 权限管理 -->
-        <el-menu-item index="/dashboard/permissions">
-          <el-icon><Lock /></el-icon>
-          <span>权限管理</span>
-        </el-menu-item>
-        
-        <!-- 系统管理 -->
-        <el-menu-item index="/dashboard/system">
-          <el-icon><Setting /></el-icon>
-          <span>系统管理</span>
-        </el-menu-item>
-        
-        <!-- 文档中心 -->
-        <el-menu-item index="/dashboard/docs">
-          <el-icon><Reading /></el-icon>
-          <span>文档中心</span>
-        </el-menu-item>
-        <!-- Articles管理 -->
-        <el-menu-item index="/dashboard/articleses">
-          <el-icon><Document /></el-icon>
-          <span>Articles管理</span>
-        </el-menu-item>
-
-
+        </template>
       </el-menu>
     </el-aside>
 
@@ -133,6 +118,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout } from '@/api/auth'
 import NotificationCenter from '@/components/NotificationCenter.vue'
 import { useSystemStore } from '@/stores/system'
+import { getMenuTree } from '@/api/menu'
 import {
   House,
   User,
@@ -196,10 +182,92 @@ const userInfo = ref({
   role: '超级管理员'
 })
 
+// 菜单树
+const menuTree = ref<any[]>([])
+
 // 当前激活的菜单
 const activeMenu = computed(() => {
   return route.path
 })
+
+// 获取图标组件
+const getIcon = (iconName?: string) => {
+  if (!iconName) return House
+  const iconMap: Record<string, any> = {
+    House,
+    User,
+    UserFilled,
+    Menu,
+    Lock,
+    Setting,
+    Reading,
+    Document,
+    Key: Lock
+  }
+  return iconMap[iconName] || House
+}
+
+// 加载菜单树
+const loadMenuTree = async () => {
+  try {
+    // 先尝试从 localStorage 读取（登录时保存的）
+    const savedMenus = localStorage.getItem('admin_menus')
+    if (savedMenus) {
+      try {
+        const parsed = JSON.parse(savedMenus)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // 过滤并处理菜单数据
+          const filterMenu = (menus: any[]): any[] => {
+            return menus
+              .filter(menu => menu.visible === 1 && menu.status === 1)
+              .map(menu => ({
+                ...menu,
+                path: menu.path || (menu.type === 'directory' ? '' : undefined),
+                children: menu.children ? filterMenu(menu.children) : []
+              }))
+          }
+          menuTree.value = filterMenu(parsed)
+          // 如果菜单数据有效，直接返回
+          if (menuTree.value.length > 0) {
+            return
+          }
+        }
+      } catch (e) {
+        console.error('解析保存的菜单失败:', e)
+      }
+    }
+    
+    // 从后端获取菜单树
+    const response = await getMenuTree()
+    if (response && response.list) {
+      // 过滤掉隐藏的菜单和禁用的菜单
+      const filterMenu = (menus: any[]): any[] => {
+        return menus
+          .filter(menu => menu.visible === 1 && menu.status === 1)
+          .map(menu => ({
+            ...menu,
+            path: menu.path || (menu.type === 'directory' ? '' : undefined),
+            children: menu.children ? filterMenu(menu.children) : []
+          }))
+      }
+      menuTree.value = filterMenu(response.list)
+      // 保存到 localStorage
+      localStorage.setItem('admin_menus', JSON.stringify(menuTree.value))
+    }
+  } catch (error) {
+    console.error('加载菜单树失败:', error)
+    // 如果加载失败，使用默认菜单
+    menuTree.value = [
+      {
+        id: 1,
+        name: '仪表盘',
+        path: '/dashboard',
+        icon: 'House',
+        children: []
+      }
+    ]
+  }
+}
 
 // 面包屑导航
 const breadcrumbList = computed(() => {
@@ -221,6 +289,9 @@ onMounted(() => {
   if (!systemStore.loaded) {
     systemStore.loadSystemInfo()
   }
+  
+  // 加载菜单树
+  loadMenuTree()
   
   const savedUserInfo = localStorage.getItem('admin_user_info')
   if (savedUserInfo) {
@@ -341,15 +412,34 @@ watch(route, () => {
   color: #bfcbd9;
 }
 
-.sidebar-menu .el-menu-item:hover,
-.sidebar-menu .el-sub-menu__title:hover {
-  background-color: #263445;
-  color: #fff;
+/* 一级菜单：黑底白字 - 使用 :deep() 穿透 scoped 样式 */
+:deep(.sidebar-menu > .el-menu-item),
+:deep(.sidebar-menu > .el-sub-menu > .el-sub-menu__title) {
+  background-color: #000 !important;
+  color: #fff !important;
 }
 
-.sidebar-menu .el-menu-item.is-active {
-  background-color: #409eff;
-  color: #fff;
+:deep(.sidebar-menu > .el-menu-item:hover),
+:deep(.sidebar-menu > .el-sub-menu > .el-sub-menu__title:hover) {
+  background-color: #1a1a1a !important;
+  color: #fff !important;
+}
+
+:deep(.sidebar-menu > .el-menu-item.is-active) {
+  background-color: #409eff !important;
+  color: #fff !important;
+}
+
+/* 二级菜单保持原样式 */
+:deep(.sidebar-menu .el-sub-menu .el-menu-item:hover),
+:deep(.sidebar-menu .el-sub-menu .el-sub-menu__title:hover) {
+  background-color: #263445 !important;
+  color: #fff !important;
+}
+
+:deep(.sidebar-menu .el-sub-menu .el-menu-item.is-active) {
+  background-color: #409eff !important;
+  color: #fff !important;
 }
 
 .main-container {

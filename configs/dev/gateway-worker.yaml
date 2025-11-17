@@ -1,0 +1,10 @@
+# gateway-worker 服务开发环境配置
+
+services:
+  gateway_worker:
+    port: 8084
+
+log:
+  level: "debug"
+  output: "stdout"
+

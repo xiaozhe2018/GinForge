@@ -59,9 +59,10 @@ cd GinForge
 go mod tidy
 cd web/admin && npm install && cd ../..
 
-# 3. 配置环境变量
+# 3. 配置环境变量（超简单）
 cp env.example .env
-# 编辑 .env，配置数据库连接信息
+# 编辑 .env，只需设置 GOEASE_APP_ENV=dev
+# 其他配置使用 YAML 默认值，无需在 .env 中重复配置
 
 # 4. 创建数据库
 mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS gin_forge DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

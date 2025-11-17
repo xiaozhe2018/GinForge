@@ -1,0 +1,10 @@
+# demo 服务开发环境配置
+
+services:
+  demo:
+    port: 8085
+
+log:
+  level: "debug"
+  output: "stdout"
+

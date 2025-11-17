@@ -1,0 +1,10 @@
+# admin-api 服务测试环境配置
+
+services:
+  admin_api:
+    port: 8083
+
+log:
+  level: "debug"
+  output: "stdout"
+

@@ -339,38 +339,33 @@ ON DUPLICATE KEY UPDATE `code`=`code`;
 SET @system_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'system_management' LIMIT 1);
 
 INSERT INTO `gf_admin_menus` (`parent_id`, `name`, `code`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `status`, `description`) VALUES
--- 系统管理下的二级菜单
+-- 系统管理下的二级菜单（用户管理、角色管理、菜单管理、权限管理直接作为系统管理的子菜单）
 (@system_menu_id, '系统配置', 'system_config', 'menu', '/dashboard/system', 'System', 'Setting', 1, 1, 1, '系统配置管理'),
-(@system_menu_id, '用户管理', 'user_management', 'directory', '', '', 'User', 2, 1, 1, '用户管理模块'),
-(@system_menu_id, '角色管理', 'role_management', 'directory', '', '', 'UserFilled', 3, 1, 1, '角色管理模块'),
-(@system_menu_id, '菜单管理', 'menu_management', 'directory', '', '', 'Menu', 4, 1, 1, '菜单管理模块'),
+(@system_menu_id, '用户管理', 'user_management', 'menu', '/dashboard/users', 'Users', 'User', 2, 1, 1, '用户管理'),
+(@system_menu_id, '角色管理', 'role_management', 'menu', '/dashboard/roles', 'Roles', 'UserFilled', 3, 1, 1, '角色管理'),
+(@system_menu_id, '菜单管理', 'menu_management', 'menu', '/dashboard/menus', 'Menus', 'Menu', 4, 1, 1, '菜单管理'),
 (@system_menu_id, '权限管理', 'permission_management', 'menu', '/dashboard/permissions', 'Permissions', 'Key', 5, 1, 1, '权限管理')
-ON DUPLICATE KEY UPDATE `code`=`code`;
-
--- 插入三级菜单（用户管理、角色管理、菜单管理的子菜单）
-SET @user_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'user_management' LIMIT 1);
-SET @role_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'role_management' LIMIT 1);
-SET @menu_menu_id = (SELECT id FROM gf_admin_menus WHERE code = 'menu_management' LIMIT 1);
-
-INSERT INTO `gf_admin_menus` (`parent_id`, `name`, `code`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `status`, `description`) VALUES
-(@user_menu_id, '用户列表', 'user_list', 'menu', '/dashboard/users', 'Users', '', 1, 1, 1, '用户列表页面'),
-(@user_menu_id, '创建用户', 'user_create', 'button', '', '', '', 2, 0, 1, '创建用户按钮'),
-(@role_menu_id, '角色列表', 'role_list', 'menu', '/dashboard/roles', 'Roles', '', 1, 1, 1, '角色列表页面'),
-(@role_menu_id, '创建角色', 'role_create', 'button', '', '', '', 2, 0, 1, '创建角色按钮'),
-(@menu_menu_id, '菜单列表', 'menu_list', 'menu', '/dashboard/menus', 'Menus', '', 1, 1, 1, '菜单列表页面'),
-(@menu_menu_id, '创建菜单', 'menu_create', 'button', '', '', '', 2, 0, 1, '创建菜单按钮')
-ON DUPLICATE KEY UPDATE `code`=`code`;
+ON DUPLICATE KEY UPDATE 
+  `parent_id`=VALUES(`parent_id`),
+  `type`=VALUES(`type`),
+  `path`=VALUES(`path`),
+  `component`=VALUES(`component`),
+  `icon`=VALUES(`icon`),
+  `sort`=VALUES(`sort`);
 
 -- 关联管理员用户和超级管理员角色
-INSERT IGNORE INTO `gf_admin_user_roles` (`user_id`, `role_id`) VALUES (1, 1);
+INSERT INTO `gf_admin_user_roles` (`user_id`, `role_id`) VALUES (1, 1)
+ON DUPLICATE KEY UPDATE `user_id`=`user_id`;
 
 -- 为超级管理员角色分配所有权限
-INSERT IGNORE INTO `gf_admin_role_permissions` (`role_id`, `permission_id`) 
-SELECT 1, id FROM `gf_admin_permissions`;
+INSERT INTO `gf_admin_role_permissions` (`role_id`, `permission_id`) 
+SELECT 1, id FROM `gf_admin_permissions`
+ON DUPLICATE KEY UPDATE `role_id`=`role_id`;
 
 -- 为超级管理员角色分配所有菜单
-INSERT IGNORE INTO `gf_admin_role_menus` (`role_id`, `menu_id`) 
-SELECT 1, id FROM `gf_admin_menus`;
+INSERT INTO `gf_admin_role_menus` (`role_id`, `menu_id`) 
+SELECT 1, id FROM `gf_admin_menus` WHERE `status` = 1
+ON DUPLICATE KEY UPDATE `role_id`=`role_id`;
 
 -- 插入默认系统配置
 INSERT INTO `gf_admin_system_configs` (`key`, `value`, `type`, `description`, `group`, `sort`) VALUES
