@@ -1,6 +1,6 @@
 # GinForge 高级功能
 
-本文档介绍了 GinForge 框架的高级功能，包括测试框架、CLI工具、服务网格和配置中心。
+本文档介绍了 GinForge 框架的高级功能，包括测试框架、CLI工具和服务网格。
 
 ## 🧪 测试框架
 
@@ -130,57 +130,6 @@ spec:
     - "*.ginforge.local"
 ```
 
-## ⚙️ 配置中心
-
-### 功能特性
-
-- **动态更新**: 运行时配置更新
-- **配置监听**: 配置变更事件通知
-- **配置验证**: 配置值验证
-- **配置备份**: 自动备份和恢复
-- **配置查询**: 配置管理API
-
-### 快速开始
-
-```go
-// 创建配置中心
-configCenter := config.NewSimpleConfigCenter(cfg)
-
-// 设置配置
-err := configCenter.SetConfig("app.port", 8081)
-
-// 监听配置变更
-configCenter.WatchConfig("app.port", func(key string, oldValue, newValue interface{}) {
-    log.Info("配置已变更", "key", key, "new_value", newValue)
-})
-
-// 注册监听器
-configCenter.RegisterWatcher("app.port", &PortWatcher{})
-```
-
-### 配置管理API
-
-```go
-// 获取配置
-GET /api/v1/config/:key
-
-// 设置配置
-POST /api/v1/config/:key
-{
-  "value": "new_value"
-}
-
-// 获取所有配置
-GET /api/v1/config/
-
-// 批量更新配置
-PUT /api/v1/config/
-{
-  "app.port": 8081,
-  "log.level": "debug"
-}
-```
-
 ## 📊 监控和可观测性
 
 ### 功能特性
@@ -307,21 +256,14 @@ go mod tidy
 - 基准测试确保性能要求
 - 模拟测试隔离外部依赖
 
-### 2. 配置管理
-
-- 使用配置中心统一管理
-- 实现配置验证和监听
-- 支持配置热更新
-- 定期备份配置
-
-### 3. 服务网格
+### 2. 服务网格
 
 - 启用mTLS确保安全
 - 配置流量管理策略
 - 监控服务健康状态
 - 实现故障恢复机制
 
-### 4. 监控告警
+### 3. 监控告警
 
 - 收集关键业务指标
 - 设置合理的告警阈值
@@ -335,7 +277,6 @@ GinForge 提供了完整的企业级微服务开发解决方案，包括：
 - ✅ **测试框架**: 完整的测试工具和最佳实践
 - ✅ **CLI工具**: 强大的代码生成和管理工具
 - ✅ **服务网格**: Istio集成和配置管理
-- ✅ **配置中心**: 动态配置和监听机制
 - ✅ **监控运维**: 完整的可观测性解决方案
 
 通过这些高级功能，开发者可以快速构建、测试、部署和运维高质量的微服务系统。

@@ -22,8 +22,14 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	// 中间件
 	r.Use(gin.Recovery())
 	r.Use(middleware.CORS()) // 添加 CORS 中间件，必须放在最前面
+	r.Use(middleware.SecurityHeaders(nil)) // 添加安全响应头中间件
 	r.Use(middleware.RequestID())
-	r.Use(gin.Logger())
+	// 开发环境使用 gin.Logger()，生产环境使用 middleware.AccessLogger(log)
+	if cfg.IsProduction() {
+		r.Use(middleware.AccessLogger(log))
+	} else {
+		r.Use(gin.Logger()) // 开发环境：简洁的请求日志
+	}
 	r.Use(middleware.OperationLogger(db)) // 添加操作日志中间件
 
 	// 健康检查
@@ -73,6 +79,30 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 	// 无需认证的路由
 	api.POST("/login", adminAuthHandler.Login)
 	api.GET("/system/basic-info", adminSystemHandler.GetSystemBasicInfo) // 获取系统基本信息（公开接口）
+	// 获取 CSRF Token（公开接口，用于登录前获取Token）
+	// 注意：CSRF Token 会在首次访问时自动生成并设置到 Cookie
+	// 此接口主要用于前端获取 Token 值
+	api.GET("/csrf-token", func(c *gin.Context) {
+		// 生成临时CSRF配置来获取Token
+		csrfConfig := middleware.DefaultCSRFConfig()
+		csrfConfig.CookieSecure = cfg.IsProduction() // 生产环境使用 HTTPS Cookie
+		token, err := csrfConfig.GenerateToken()
+		if err != nil {
+			response.Error(c, 500, "生成CSRF令牌失败")
+			return
+		}
+		// 设置Cookie
+		c.SetCookie(
+			csrfConfig.CookieName,
+			token,
+			3600, // 1小时过期
+			csrfConfig.CookiePath,
+			csrfConfig.CookieDomain,
+			csrfConfig.CookieSecure,
+			true, // HttpOnly
+		)
+		response.Success(c, gin.H{"csrf_token": token})
+	})
 
 	// 需要认证的路由
 	auth := api.Group("")
@@ -82,6 +112,10 @@ func NewRouter(db *gorm.DB, redisClient *redis.Client, notifyService *notificati
 		jwtSecret = "your-secret-key-change-in-production" // 默认值
 	}
 	auth.Use(middleware.JWTAuthWithRedis(jwtSecret, redisClient))
+	// 添加 CSRF 防护（在认证之后，只对需要认证的路由启用）
+	csrfConfig := middleware.DefaultCSRFConfig()
+	csrfConfig.CookieSecure = cfg.IsProduction() // 生产环境使用 HTTPS Cookie
+	auth.Use(middleware.CSRF(csrfConfig))
 
 	// 用户相关路由
 	auth.GET("/users", adminUserHandler.GetUsers)

@@ -407,39 +407,45 @@ watch(route, () => {
   background-color: #304156;
 }
 
-.sidebar-menu .el-menu-item,
-.sidebar-menu .el-sub-menu__title {
+/* 统一菜单样式 - 使用 Element Plus 标准深色主题 */
+:deep(.sidebar-menu .el-menu-item),
+:deep(.sidebar-menu .el-sub-menu__title) {
+  color: #bfcbd9;
+  background-color: transparent;
+}
+
+/* 菜单项悬停效果 */
+:deep(.sidebar-menu .el-menu-item:hover),
+:deep(.sidebar-menu .el-sub-menu__title:hover) {
+  background-color: #263445;
+  color: #fff;
+}
+
+/* 激活的菜单项 */
+:deep(.sidebar-menu .el-menu-item.is-active) {
+  background-color: #409eff;
+  color: #fff;
+}
+
+/* 子菜单背景 */
+:deep(.sidebar-menu .el-sub-menu .el-menu) {
+  background-color: #1f2d3d;
+}
+
+/* 子菜单项样式 */
+:deep(.sidebar-menu .el-sub-menu .el-menu-item) {
+  background-color: transparent;
   color: #bfcbd9;
 }
 
-/* 一级菜单：黑底白字 - 使用 :deep() 穿透 scoped 样式 */
-:deep(.sidebar-menu > .el-menu-item),
-:deep(.sidebar-menu > .el-sub-menu > .el-sub-menu__title) {
-  background-color: #000 !important;
-  color: #fff !important;
-}
-
-:deep(.sidebar-menu > .el-menu-item:hover),
-:deep(.sidebar-menu > .el-sub-menu > .el-sub-menu__title:hover) {
-  background-color: #1a1a1a !important;
-  color: #fff !important;
-}
-
-:deep(.sidebar-menu > .el-menu-item.is-active) {
-  background-color: #409eff !important;
-  color: #fff !important;
-}
-
-/* 二级菜单保持原样式 */
-:deep(.sidebar-menu .el-sub-menu .el-menu-item:hover),
-:deep(.sidebar-menu .el-sub-menu .el-sub-menu__title:hover) {
-  background-color: #263445 !important;
-  color: #fff !important;
+:deep(.sidebar-menu .el-sub-menu .el-menu-item:hover) {
+  background-color: #263445;
+  color: #fff;
 }
 
 :deep(.sidebar-menu .el-sub-menu .el-menu-item.is-active) {
-  background-color: #409eff !important;
-  color: #fff !important;
+  background-color: #409eff;
+  color: #fff;
 }
 
 .main-container {

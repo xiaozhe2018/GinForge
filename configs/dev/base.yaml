@@ -13,14 +13,14 @@ app:
 
 # 日志配置
 log:
-  level: "debug"
+  level: "info"  # 开发环境建议使用 info，减少日志输出
   format: "json"
-  output: "stdout"
-  file_path: "logs/app.log"
-  max_size: 100
-  max_age: 30
-  max_backups: 10
-  compress: true
+  output: "both"  # stdout: 只输出到控制台, file: 只输出到文件, both: 同时输出
+  dir: "logs"     # 日志目录，每个服务会生成独立的日志文件：logs/{service-name}.log
+  max_size: 100   # 单个日志文件最大大小（MB）
+  max_age: 30     # 日志文件保留天数
+  max_backups: 10 # 保留的日志文件数量
+  compress: true  # 是否压缩旧日志文件
 
 # 数据库配置
 database:

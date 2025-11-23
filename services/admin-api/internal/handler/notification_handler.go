@@ -16,7 +16,7 @@ type NotificationHandler struct {
 func NewNotificationHandler(notificationService *service.NotificationService) *NotificationHandler {
 	return &NotificationHandler{
 		notificationService: notificationService,
-		logger:              logger.New("notification-handler", "info"),
+		logger:              logger.New("notification-handler", "info", "stdout", ""),
 	}
 }
 

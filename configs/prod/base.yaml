@@ -13,14 +13,14 @@ app:
 
 # 日志配置
 log:
-  level: "info"
+  level: "warn"   # 生产环境建议使用 warn 或 error
   format: "json"
-  output: "file"
-  file_path: "/var/log/ginforge/app.log"
-  max_size: 500
-  max_age: 30
-  max_backups: 10
-  compress: true
+  output: "file"  # 生产环境只输出到文件
+  dir: "logs"     # 日志目录，每个服务会生成独立的日志文件：logs/{service-name}.log
+  max_size: 100   # 单个日志文件最大大小（MB）
+  max_age: 30     # 日志文件保留天数
+  max_backups: 10 # 保留的日志文件数量
+  compress: true  # 是否压缩旧日志文件
 
 # 数据库配置（使用环境变量）
 database:

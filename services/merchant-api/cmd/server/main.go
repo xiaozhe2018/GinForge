@@ -42,7 +42,12 @@ func main() {
 	// 加载配置（新版）
 	cfg := config.New()
 	serviceName := "merchant-api"
-	log := logger.New(serviceName, cfg.GetString("log.level"))
+	log := logger.New(
+		serviceName,
+		cfg.GetString("log.level"),
+		cfg.GetString("log.output"),
+		cfg.GetString("log.dir"),
+	)
 
 	// 初始化服务
 	merchantService := service.NewMerchantService()

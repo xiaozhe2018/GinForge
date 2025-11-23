@@ -162,3 +162,4 @@ temp/
 # services/*/docs/docs.go
 # services/*/docs/swagger.json
 # services/*/docs/swagger.yaml
+logs/

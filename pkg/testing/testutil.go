@@ -67,7 +67,7 @@ type TestServer struct {
 // NewTestServer 创建测试服务器
 func NewTestServer(t *testing.T, setupRoutes func(*gin.Engine)) *TestServer {
 	cfg := NewTestConfig()
-	log := logger.New("test", "debug")
+	log := logger.New("test", "debug", "stdout", "")
 
 	// 初始化Redis
 	redisCfg := &config.RedisConfig{
@@ -188,7 +188,7 @@ type TestDatabase struct {
 // NewTestDatabase 创建测试数据库
 func NewTestDatabase(t *testing.T) *TestDatabase {
 	cfg := NewTestConfig()
-	log := logger.New("test-db", "debug")
+	log := logger.New("test-db", "debug", "stdout", "")
 
 	return &TestDatabase{
 		Config: cfg.Config,
@@ -205,7 +205,7 @@ type TestRedis struct {
 // NewTestRedis 创建测试Redis
 func NewTestRedis(t *testing.T) *TestRedis {
 	cfg := NewTestConfig()
-	log := logger.New("test-redis", "debug")
+	log := logger.New("test-redis", "debug", "stdout", "")
 
 	redisCfg := &config.RedisConfig{
 		Host:               cfg.GetString("redis.host"),
@@ -245,7 +245,7 @@ type TestSuite struct {
 // NewTestSuite 创建测试套件
 func NewTestSuite(t *testing.T) *TestSuite {
 	cfg := NewTestConfig()
-	log := logger.New("test-suite", "debug")
+	log := logger.New("test-suite", "debug", "stdout", "")
 
 	redisCfg := &config.RedisConfig{
 		Host:               cfg.GetString("redis.host"),

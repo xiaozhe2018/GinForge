@@ -28,7 +28,6 @@
 - [demo/redis_usage.md](./demo/redis_usage.md) - Redis使用示例
 - [demo/base_classes_usage.md](./demo/base_classes_usage.md) - 基类使用示例
 - [demo/advanced_features.md](./demo/advanced_features.md) - 高级功能示例
-- [demo/config_center_usage.md](./demo/config_center_usage.md) - 配置中心使用示例
 
 ## 🎯 快速导航
 
@@ -51,7 +50,6 @@
 - **测试框架**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#测试框架)
 - **CLI工具**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#cli工具)
 - **服务网格**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#服务网格)
-- **配置中心**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#配置中心)
 
 ## 📖 文档说明
 
@@ -100,7 +98,6 @@
 - [demo/redis_usage.md](./demo/redis_usage.md) - Redis使用示例
 - [demo/base_classes_usage.md](./demo/base_classes_usage.md) - 基类使用示例
 - [demo/advanced_features.md](./demo/advanced_features.md) - 高级功能示例
-- [demo/config_center_usage.md](./demo/config_center_usage.md) - 配置中心使用示例
 
 ## 🎯 快速导航
 
@@ -123,7 +120,6 @@
 - **测试框架**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#测试框架)
 - **CLI工具**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#cli工具)
 - **服务网格**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#服务网格)
-- **配置中心**: [ADVANCED_FEATURES.md](./ADVANCED_FEATURES.md#配置中心)
 
 ## 📖 文档说明
 

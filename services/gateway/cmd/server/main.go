@@ -18,7 +18,12 @@ func main() {
 	// 加载配置（新版）
 	cfg := config.New()
 	serviceName := "gateway"
-	log := logger.New(serviceName, cfg.GetString("log.level"))
+	log := logger.New(
+		serviceName,
+		cfg.GetString("log.level"),
+		cfg.GetString("log.output"),
+		cfg.GetString("log.dir"),
+	)
 
 	// 初始化路由
 	r := router.NewRouter(cfg, log)
